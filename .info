@@ -1,0 +1,36 @@
+api
+	OpenSpec API docs
+bin
+	Binary builds
+cmd
+	Source for Go main commands
+cmd/brimstone
+	Endpoint Server command
+cmd/hailstone
+	Tool to load Brimstone from PAM
+cmd/hmslclient
+	Example client for HMSL API
+cmd/ggclient
+	Example client for Gitguardian API
+cmd/pamclient
+	Example client for PAM API
+cmd/randchar
+	Utility to generate random characters
+images
+	Images for docs (generated images go here too)
+pkg/brimstone
+	Source for Brimstone package (Generated code goes here too)
+pkg/hasmysecretleaked
+	Source for hasmysecretleaked package (Generated code goes here too)
+pkg/gitguardian
+	Source for gitguardian package (Generated from openapi spec)
+pkg/privilegeaccessmanager
+	Source for PAM package
+pkg/utils
+	Source for helpers
+scripts
+	Build and Project support scripts
+sql
+	SQL to support Brimstone
+static
+	Generated html docs

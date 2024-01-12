@@ -1,0 +1,175 @@
+openapi: "3.0.0"
+servers: 
+  - url: http://127.0.0.1:9191
+info:
+  version: "v1.0.0"
+  title: "Brimstone"
+  description: "Facilitate checking the existence of credential(s) found by GitGuardian with credentials(s) in PAM to see if they exist."
+  license:
+    name: "Apache 2.0"
+    url: "https://www.apache.org/licenses/LICENSE-2.0.html"  
+paths:
+  /v1/hashes:
+    put:
+      summary: Add new hashes
+      operationId: "StoreHashes"
+      description: "/v1/hashes receives list of hashes and stores them"
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/HashBatch"
+      responses:
+        200:
+          description: "hashes response"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        401:
+          description: "401 Nope, Not Authz"
+          content:
+            application/json:
+              schema:
+                type: "string"                
+        default:
+          description: "unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []          
+  /v1/hashes/sendprefixes:
+    get:
+      summary: Trigger brimstone to send hash prefixes to HMSL
+      operationId: "SendHashPrefixes"
+      description: "/v1/hashes/sendprefixes sends hash prefixes to HMSL"
+      parameters: []
+      responses:
+        200:
+          description: "hashes send response"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        401:
+          description: "401 Nope, Not Authz"
+          content:
+            application/json:
+              schema:
+                type: "string"                
+        default:
+          description: "unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []
+  /v1/hashes/sendhashes:
+    get:
+      summary: Trigger brimstone to send full hmsl-hashes to HMSL
+      operationId: "SendFullHashes"
+      description: "/v1/hashes/sendhashes sends full hmsl-hashes to HMSL"
+      parameters: []
+      responses:
+        200:
+          description: "full hashes send response"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        401:
+          description: "401 Nope, Not Authz"
+          content:
+            application/json:
+              schema:
+                type: "string"                
+        default:
+          description: "unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []          
+
+  /v1/notify/ggevent:
+    post:
+      summary: "Gitguardian event posted from webhooks"
+      operationId: "GitGuardianEventPost"
+      description: "/v1/notify/ggevent is the endpoint to set in GG custom webhook configuration."
+      parameters: []
+      responses:
+        200:
+          description: "hashes send response"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        401:
+          description: "401 Nope, Not Authz"
+          content:
+            application/json:
+              schema:
+                type: "string"                
+        default:
+          description: "unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []          
+components:
+  securitySchemes:
+    BearerAuth:
+      type: "http"
+      scheme: "bearer"
+      bearerFormat: "Generated API Key"
+  schemas:
+    Hash:
+      type: "object"
+      required:
+        - "name"
+        - "hash"
+      properties:
+        name:
+          type: "string"
+          x-oapi-codegen-extra-tags:
+            gorm: "primaryKey"
+        hash:
+          type: "string"
+          x-oapi-codegen-extra-tags:
+            gorm: "primaryKey"
+    HashBatch:
+      type: "object"
+      required:
+        - "safename"
+        - "hashes"
+      properties:
+        safename:
+          type: "string"
+          x-oapi-codegen-extra-tags:
+            gorm: "primaryKey"
+        hashes:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Hash"
+          x-oapi-codegen-extra-tags:
+            gorm: "many2many:safename_hashes;References:name,hash"
+    Error:
+      type: "object"
+      required:
+        - "code"
+        - "message"
+      properties:
+        code:
+          type: "integer"
+          format: "int32"
+        message:
+          type: "string"

@@ -1,0 +1,23 @@
+{
+  "options": {
+    "html": true,
+    "xhtmlOut": true,
+    "breaks": true,
+    "langPrefix": "language-",
+    "linkify": true,
+    "typographer": true,
+    "quotes": "“”‘’"
+  },
+  "plugins": [
+    {
+	"name": "markdown-it-meta-header",
+	"options": {}
+    },
+    {
+	"name": "markdown-it-plantuml-ex",
+	"options": {}
+    }
+  ]
+}
+
+
