@@ -1,17 +1,22 @@
 # docs.makefile
 
-# Updated: <2023-10-24 00:57:48 david.hisel>
+# Updated: <2024-01-16 15:21:29 david.hisel>
 
 # https://github.com/plantuml/plantuml/releases
-PLANTUML_JAR =  $(BINDIR)/plantuml.jar
-PLANTUML_DEFAULT_URL = https://github.com/plantuml/plantuml/releases/download/v1.2023.12/plantuml.jar
-PLANTUML_API_URL = https://api.github.com/repos/plantuml/plantuml/releases/latest
+PLANTUML_JAR := $(BINDIR)/plantuml.jar
+PLANTUML_DEFAULT_URL := https://github.com/plantuml/plantuml/releases/download/v1.2023.12/plantuml.jar
+PLANTUML_API_URL := https://api.github.com/repos/plantuml/plantuml/releases/latest
+
+# Determine plantuml.jar download URL; do it this way in case github
+# returns api-rate limit msg instead of json; set the download url
+# value from the api call JSON response or the default value set above
+PLANTUML_DOWNLOAD_URL := $(shell curl -s $(PLANTUML_API_URL) 2>/dev/null |jq -er '.assets[]|select(.name=="plantuml.jar")|.browser_download_url' 2>/dev/null|| echo "$(PLANTUML_DEFAULT_URL)")
 
 DOT := $(shell command -v dot 2> /dev/null)
 NPM := $(shell command -v npm 2> /dev/null)
-DOCTOC_ARGS = --entryprefix '*'
+DOCTOC_ARGS := --entryprefix '*'
 
-NPMDIR = $(shell npm root)
+NPMDIR := $(shell npm root)
 
 npm-installed:
 ifndef NPM
@@ -28,10 +33,7 @@ docs: $(DOCFILES) | dot-installed doctoc $(PLANTUML_JAR) ## process DOCFILES fil
 	$(foreach var,$(DOCFILES),if ! git diff --exit-code $(var)>/dev/null; then java -jar $(PLANTUML_JAR) -tsvg $(var); fi;)
 	$(foreach var,$(DOCFILES),if ! git diff --exit-code $(var)>/dev/null; then npm exec -- doctoc $(DOCTOC_ARGS) $(var); fi;)
 
-# Determine plantuml.jar download URL; do it this way in case github
-# returns api-rate limit msg instead of json; set the download url
-# value from the api call JSON response or the default value set above
-PLANTUML_DOWNLOAD_URL = $(shell curl -s $(PLANTUML_API_URL) 2>/dev/null |jq -er '.assets[]|select(.name=="plantuml.jar")|.browser_download_url' 2>/dev/null|| echo "$(PLANTUML_DEFAULT_URL)")
+.PHONY: npm-installed dot-installed docs
 
 $(BINDIR):
 	@mkdir -p $(BINDIR)
@@ -58,6 +60,9 @@ endif
 
 html: $(DOCFILE_HTML_TARGETS)  ## build html docs from markdown DOCFILES; process .md to .md.html
 
+.PHONY: doctoc markdown-it html
+
+
 $(STATICDIR)%.md.html : %.md | markdown-it
 	@mkdir -p $(STATICDIR)
 	npm exec -- markdown-it -o $@ $<
@@ -78,3 +83,5 @@ clean::
 realclean::
 	rm -rf $(PLANTUML_JAR)
 	rm -rf $(DOCFILE_HTML_TARGETS)
+
+.PHONY: vardump clean realclean

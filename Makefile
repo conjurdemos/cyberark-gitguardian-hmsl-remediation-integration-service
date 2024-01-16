@@ -1,18 +1,18 @@
 # Makefile -*- Makefile -*-
 
-# Updated: <2023-11-29 15:32:30 david.hisel>
+# Updated: <2024-01-16 15:24:57 david.hisel>
 
 # LICENSE
 
-BINDIR = ./bin
-STATICDIR = ./static/
+BINDIR := ./bin
+STATICDIR := ./static/
 
-DOCFILES = README.md README-design.md CONTRIBUTING.md 
+DOCFILES := README.md README-design.md CONTRIBUTING.md 
 DOCFILE_HTML_TARGETS := $(foreach var,$(DOCFILES),$(STATICDIR)$(var).html) gen-brimstone-doc
 
-BRIMSTONE_OPENAPI_SPEC = api/brimstone.yaml
+BRIMSTONE_OPENAPI_SPEC := api/brimstone.yaml
 
-DATADIR = ./data
+DATADIR := ./data
 
 include scripts/common.makefile
 export
@@ -26,6 +26,7 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 ##
 ## Documentation targets
 ##
+.PHONY: gen-brimstone-doc
 gen-brimstone-doc: static/brimstone-spec/index.html   ## generate brimstone HTML doc from brimstone openapi spec
 
 static/brimstone-spec/index.html: api/brimstone.yaml | redocly-cli
@@ -65,30 +66,38 @@ pkg/gitguardian/gitguardian.gen.go: api/gitguardian-openapi.json | oapi-codegen-
 ## Build binaries
 ##
 
+.PHONY: build-brimstone
 build-brimstone: $(BINDIR)/brimstone  ## build the brimstone server BINDIR/brimstone
 
 $(BINDIR)/brimstone: VERSION pkg/brimstone/brimstone.go pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/client.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go $(BRIMSTONE_OPENAPI_SPEC)
 	$(GO) build -o $(BINDIR)/brimstone $(LDFLAGS) cmd/brimstone/main.go
 
+.PHONY: build-hailstone
 build-hailstone: $(BINDIR)/hailstone  ## build the hailstone loader BINDIR/hailstone
 
 $(BINDIR)/hailstone: VERSION pkg/brimstone/brimstone.gen.go $(BRIMSTONE_OPENAPI_SPEC)
 	$(GO) build -o $(BINDIR)/hailstone $(LDFLAGS) cmd/hailstone/main.go
 
+.PHONY: build-hmsl-client
 build-hmsl-client: $(BINDIR)/hmsl-client  ## build the hmsl client BINDIR/hmsl-client 
 
 $(BINDIR)/hmsl-client: VERSION cmd/hmslclient/main.go pkg/hasmysecretleaked/client.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go
 	$(GO) build -o $(BINDIR)/hmsl-client $(LDFLAGS) cmd/hmslclient/main.go
 
+.PHONY: build-gg-client
 build-gg-client: $(BINDIR)/gg-client ## build the gg client BINDIR/gg-client
 
 $(BINDIR)/gg-client: VERSION cmd/ggclient/main.go pkg/gitguardian/gitguardian.gen.go
 	$(GO) build -o $(BINDIR)/gg-client $(LDFLAGS) cmd/ggclient/main.go
 
+.PHONY: build-pam-client
 build-pam-client: $(BINDIR)/pam-client ## build the gg client BINDIR/gg-client
 
 $(BINDIR)/pam-client: VERSION cmd/pamclient/main.go pkg/privilegeaccessmanager/privilegeaccessmanager.go pkg/utils/utils.go
 	$(GO) build -o $(BINDIR)/pam-client $(LDFLAGS) cmd/pamclient/main.go
+
+.PHONY: build-all-bins
+build-all-bins: build-brimstone build-hailstone build-hmsl-client build-gg-client build-pam-client build-randchar
 
 ##
 ## Helpers
@@ -108,10 +117,8 @@ build-randchar: $(BINDIR)/randchar  ## build the randchar server BINDIR/randchar
 $(BINDIR)/randchar: VERSION cmd/randchar/main.go
 	$(GO) build -o $(BINDIR)/randchar $(LDFLAGS) cmd/randchar/main.go
 
-.PHONY:
-build-all-bins: build-brimstone build-hailstone build-hmsl-client build-gg-client build-pam-client build-randchar
+.PHONY: initialize-cockroach-dev start-cockroach-dev stop-cockroach-dev build-randchar
 
-.PHONY:
 clean::
 	rm -f pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go
 	rm -f $(BINDIR)/brimstone
@@ -127,6 +134,8 @@ vardump::
 	@echo "Makefile: DATADIR: $(DATADIR)"
 	@echo "Makefile: LDFLAGS: $(LDFLAGS)"
 	@echo "Makefile: OAPI_CODEGEN: $(OAPI_CODEGEN)"
+
+.PHONY: vardump clean realclean
 
 include scripts/docs.makefile
 include scripts/openapi.makefile
