@@ -79,7 +79,8 @@ func main() {
 	newacctname := fmt.Sprintf("pamclient-%s", newseq)
 	newacctsecret := fmt.Sprintf("myleakedsecret-%s", newseq)
 
-	newaccountid, err := ActionAddAccount(&client, newacctname, *safename, newacctsecret, "password", "https://dashboard.gitguardian.com/workspace/000000/incident/00000000")
+	newacct, err := ActionAddAccount(&client, newacctname, *safename, newacctsecret, "password", "https://dashboard.gitguardian.com/workspace/000000/incident/00000000")
+	newaccountid := newacct.ID
 	log.Printf("New account id: %s\n", newaccountid)
 
 	// Try the cycle with the new account id
@@ -95,6 +96,8 @@ func main() {
 	if curpassword == newpassword {
 		log.Printf("INFO: passwords are the same: %s=%s\n", curpassword, newpassword)
 	}
+
+	ActionFindAccountIdFromName(&client, *safename, newacctname)
 }
 
 func ActionChangeAccountPassword(client *pam.Client, accountid string) {
@@ -105,12 +108,16 @@ func ActionChangeAccountPassword(client *pam.Client, accountid string) {
 
 }
 
-func ActionAddAccount(client *pam.Client, acctname string, safename string, secret string, secrettype string, ggincidenturl string) (string, error) {
+func ActionAddAccount(client *pam.Client, acctname string, safename string, secret string, secrettype string, ggincidenturl string) (pam.PostAddAccountResponse, error) {
+	list := "abcdefghijklmnopqrstuvwxyz01234567890"
+	seq := []rune(list)
+	newseq := utils.RandSeq(seq, 6)
 
+	uname := fmt.Sprintf("mjollnir-%s", newseq)
 	addreq := pam.PostAddAccountRequest{
 		Name:                      acctname,
 		Address:                   ggincidenturl, // Ex: "https://dashboard.gitguardian.com/workspace/000000/incident/00000000"
-		UserName:                  "gitguardian",
+		UserName:                  uname,
 		SafeName:                  safename,
 		PlatformID:                "DummyPlatform", // PCloud
 		Secret:                    secret,
@@ -119,7 +126,21 @@ func ActionAddAccount(client *pam.Client, acctname string, safename string, secr
 	}
 	newaccount, _, err := client.AddAccount(addreq)
 	if err != nil {
-		return "", err
+		return pam.PostAddAccountResponse{}, err
 	}
-	return newaccount.ID, nil
+	return newaccount, nil
+}
+
+func ActionFindAccountIdFromName(client *pam.Client, safename string, accountname string) {
+	err := client.RefreshSessionToken()
+	if err != nil {
+		log.Printf("Error: %s\n", err.Error())
+		return
+	}
+
+	acctid, rescode, err := client.FetchAccountIdFromAccountName(safename, accountname)
+	if rescode > 299 {
+		log.Printf("Result Code=%d\n", rescode)
+	}
+	log.Printf("Account Name=%s, ID=%s\n", accountname, acctid)
 }

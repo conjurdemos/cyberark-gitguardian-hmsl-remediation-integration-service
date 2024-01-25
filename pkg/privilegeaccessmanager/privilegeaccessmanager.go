@@ -61,17 +61,20 @@ type Creator struct {
 }
 
 type Account struct {
-	ID                       string `json:"id,omitempty"`
-	Name                     string `json:"name,omitempty"`
-	CategoryModificationTime int64  `json:"categoryModificationTime,omitempty"`
-	PlatformId               string `json:"platformId,omitempty"`
-	SafeName                 string `json:"safeName,omitempty"`
-	Address                  string `json:"address,omitempty"`
-	UserName                 string `json:"userName,omitempty"`
-	SecretType               string `json:"secretType,omitempty"`
-	Secret                   string `json:"secret,omitempty"`
-	CreatedTime              int64  `json:"createdTime,omitempty"`
-	DeletionTime             int64  `json:"deletionTime,omitempty"`
+	ID                        string                    `json:"id,omitempty"`
+	Name                      string                    `json:"name,omitempty"`
+	CategoryModificationTime  int64                     `json:"categoryModificationTime,omitempty"`
+	PlatformId                string                    `json:"platformId,omitempty"`
+	SafeName                  string                    `json:"safeName,omitempty"`
+	Address                   string                    `json:"address,omitempty"`
+	UserName                  string                    `json:"userName,omitempty"`
+	SecretType                string                    `json:"secretType,omitempty"`
+	Secret                    string                    `json:"secret,omitempty"`
+	CreatedTime               int64                     `json:"createdTime,omitempty"`
+	DeletionTime              int64                     `json:"deletionTime,omitempty"`
+	PlatformAccountProperties PlatformAccountProperties `json:"platformAccountProperties,omitempty"`
+	SecretManagement          SecretManagement          `json:"secretManagement,omitempty"`
+	RemoteMachinesAccess      RemoteMachinesAccess      `json:"remoteMachinesAccess,omitempty"`
 }
 
 type PostAddAccountRequest struct {
@@ -131,7 +134,7 @@ type GetSafesResponse struct {
 	Count int    `json:"count,omitempty"`
 }
 
-type GetAccountsResponse struct {
+type FetchAccountsResponse struct {
 	Value    []Account `json:"value,omitempty"`
 	Count    int       `json:"count,omitempty"`
 	NextLink string    `json:"nextLink,omitempty"`
@@ -143,6 +146,19 @@ type PostPasswordRetrieveRequest struct {
 
 type PostChangePasswordImmediatelyRequest struct {
 	ChangeEntireGroup bool `json:"ChangeEntireGroup"`
+}
+
+type GetAccountsResponse struct {
+	Value []Account `json:"value"`
+	Count int       `json:"count"`
+}
+type SecretManagement struct {
+	AutomaticManagementEnabled bool   `json:"automaticManagementEnabled,omitempty"`
+	ManualManagementReason     string `json:"manualManagementReason,omitempty"`
+	Status                     string `json:"status,omitempty"`
+	LastModifiedTime           int    `json:"lastModifiedTime,omitempty"`
+	LastReconciledTime         int    `json:"lastReconciledTime,omitempty"`
+	LastVerifiedTime           int    `json:"lastVerifiedTime,omitempty"`
 }
 
 func NewSession(tok string, toktype string, exp time.Time) Session {
@@ -213,12 +229,12 @@ func (c *Client) FetchAccounts() ([]Account, error) {
 		return accounts, fmt.Errorf("received non-200 status code '%d'", res.StatusCode)
 	}
 
-	GetAccountsResponse := GetAccountsResponse{}
-	err = json.Unmarshal(body, &GetAccountsResponse)
+	FetchAccountsResponse := FetchAccountsResponse{}
+	err = json.Unmarshal(body, &FetchAccountsResponse)
 
 	if err == nil {
-		for i := 0; i < len(GetAccountsResponse.Value); i++ {
-			accounts = append(accounts, GetAccountsResponse.Value[i])
+		for i := 0; i < len(FetchAccountsResponse.Value); i++ {
+			accounts = append(accounts, FetchAccountsResponse.Value[i])
 		}
 	}
 
@@ -412,4 +428,62 @@ func (c *Client) AddAccount(postbody PostAddAccountRequest) (PostAddAccountRespo
 	}
 
 	return newacct, http.StatusOK, nil
+}
+
+// FetchAccountIdFromAccountName fetch all accounts in the safe and iterate through list until accountname is found
+func (c *Client) FetchAccountIdFromAccountName(safename string, accountname string) (string, int, error) {
+
+	// https://docs.cyberark.com/PrivCloud-SS/Latest/en/Content/SDK/GetAccounts.htm
+	filter := fmt.Sprintf("safeName eq %s", safename)
+	apiurl := fmt.Sprintf("%s/PasswordVault/API/Accounts?filter=%s", c.Config.PCloudURL, url.QueryEscape(filter))
+
+	client := utils.GetHTTPClient(time.Second*30, c.Config.TLS_SKIP_VERIFY)
+
+	req, err := http.NewRequest(http.MethodGet, apiurl, nil)
+	if err != nil {
+		return "", http.StatusConflict, err
+	}
+	req.Header = make(http.Header)
+
+	// if token is provided, add header Authorization
+	authheader := "UNK"
+	if c.Session.Token != "" {
+		authheader = fmt.Sprintf("%s %s", c.Session.TokenType, c.Session.Token)
+		req.Header.Add("Authorization", authheader)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		return "", http.StatusBadGateway, fmt.Errorf("failed to send request. %s", err)
+	}
+	log.Printf("APIURL: %s\n", apiurl)
+	// For debugging, emit an equivalent curl call, example...
+	// log.Printf("curl -XGET -H 'Authorization: %s' -H 'Accept: application/json' -H 'Content-Type: application/json' '%s'\n", authheader, apiurl)
+
+	body, error := io.ReadAll(res.Body)
+	if error != nil {
+		log.Println(error)
+	}
+	defer res.Body.Close()
+
+	log.Printf("%s\n", string(body))
+	var resp GetAccountsResponse
+	err = json.Unmarshal(body, &resp)
+
+	if res.StatusCode >= 300 {
+		return "", res.StatusCode, fmt.Errorf("received non-200 status (code=%d): %s", res.StatusCode, body)
+	}
+
+	foundid := ""
+	for i := 0; i < len(resp.Value); i++ {
+		if resp.Value[i].Name == accountname {
+			return resp.Value[i].ID, http.StatusOK, nil
+		}
+	}
+	if len(foundid) == 0 {
+		return "", http.StatusNotFound, nil
+	}
+	return foundid, http.StatusOK, nil
 }

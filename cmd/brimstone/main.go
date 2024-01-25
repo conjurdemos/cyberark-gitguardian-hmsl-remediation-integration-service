@@ -102,6 +102,7 @@ func main() {
 		log.Fatalf("must set env var, %s, with GG webhook token", GG_WEBHOOK_TOKEN_VARNAME)
 	}
 
+	// Configure GG authentication
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 		KeyLookup:  "header:" + GG_HEADER,
 		AuthScheme: "",
@@ -115,7 +116,7 @@ func main() {
 		},
 	}))
 
-	// // Auth with either the api key, or an incoming GG event can be validated
+	// Configure the api key authentication
 	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
 		KeyLookup:  "header:" + echo.HeaderAuthorization,
 		AuthScheme: "Bearer",

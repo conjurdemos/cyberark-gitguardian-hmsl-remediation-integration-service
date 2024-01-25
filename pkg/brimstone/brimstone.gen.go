@@ -38,11 +38,17 @@ type HashBatch struct {
 	Safename string `gorm:"primaryKey" json:"safename"`
 }
 
-// StoreHashesJSONBody defines parameters for StoreHashes.
-type StoreHashesJSONBody = []HashBatch
+// HashesPutJSONBody defines parameters for HashesPut.
+type HashesPutJSONBody = []HashBatch
 
-// StoreHashesJSONRequestBody defines body for StoreHashes for application/json ContentType.
-type StoreHashesJSONRequestBody = StoreHashesJSONBody
+// CyberArkPAMCPMEventPutJSONBody defines parameters for CyberArkPAMCPMEventPut.
+type CyberArkPAMCPMEventPutJSONBody = []HashBatch
+
+// HashesPutJSONRequestBody defines body for HashesPut for application/json ContentType.
+type HashesPutJSONRequestBody = HashesPutJSONBody
+
+// CyberArkPAMCPMEventPutJSONRequestBody defines body for CyberArkPAMCPMEventPut for application/json ContentType.
+type CyberArkPAMCPMEventPutJSONRequestBody = CyberArkPAMCPMEventPutJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -117,23 +123,28 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// StoreHashesWithBody request with any body
-	StoreHashesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// HashesPutWithBody request with any body
+	HashesPutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	StoreHashes(ctx context.Context, body StoreHashesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	HashesPut(ctx context.Context, body HashesPutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SendFullHashes request
-	SendFullHashes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SendFullHashesGet request
+	SendFullHashesGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SendHashPrefixes request
-	SendHashPrefixes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SendHashPrefixesGet request
+	SendHashPrefixesGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CyberArkPAMCPMEventPutWithBody request with any body
+	CyberArkPAMCPMEventPutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CyberArkPAMCPMEventPut(ctx context.Context, body CyberArkPAMCPMEventPutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GitGuardianEventPost request
 	GitGuardianEventPost(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) StoreHashesWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewStoreHashesRequestWithBody(c.Server, contentType, body)
+func (c *Client) HashesPutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHashesPutRequestWithBody(c.Server, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -144,8 +155,8 @@ func (c *Client) StoreHashesWithBody(ctx context.Context, contentType string, bo
 	return c.Client.Do(req)
 }
 
-func (c *Client) StoreHashes(ctx context.Context, body StoreHashesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewStoreHashesRequest(c.Server, body)
+func (c *Client) HashesPut(ctx context.Context, body HashesPutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHashesPutRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +167,8 @@ func (c *Client) StoreHashes(ctx context.Context, body StoreHashesJSONRequestBod
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendFullHashes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSendFullHashesRequest(c.Server)
+func (c *Client) SendFullHashesGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendFullHashesGetRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -168,8 +179,32 @@ func (c *Client) SendFullHashes(ctx context.Context, reqEditors ...RequestEditor
 	return c.Client.Do(req)
 }
 
-func (c *Client) SendHashPrefixes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSendHashPrefixesRequest(c.Server)
+func (c *Client) SendHashPrefixesGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSendHashPrefixesGetRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CyberArkPAMCPMEventPutWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCyberArkPAMCPMEventPutRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CyberArkPAMCPMEventPut(ctx context.Context, body CyberArkPAMCPMEventPutJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCyberArkPAMCPMEventPutRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -192,19 +227,19 @@ func (c *Client) GitGuardianEventPost(ctx context.Context, reqEditors ...Request
 	return c.Client.Do(req)
 }
 
-// NewStoreHashesRequest calls the generic StoreHashes builder with application/json body
-func NewStoreHashesRequest(server string, body StoreHashesJSONRequestBody) (*http.Request, error) {
+// NewHashesPutRequest calls the generic HashesPut builder with application/json body
+func NewHashesPutRequest(server string, body HashesPutJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewStoreHashesRequestWithBody(server, "application/json", bodyReader)
+	return NewHashesPutRequestWithBody(server, "application/json", bodyReader)
 }
 
-// NewStoreHashesRequestWithBody generates requests for StoreHashes with any type of body
-func NewStoreHashesRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+// NewHashesPutRequestWithBody generates requests for HashesPut with any type of body
+func NewHashesPutRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -232,8 +267,8 @@ func NewStoreHashesRequestWithBody(server string, contentType string, body io.Re
 	return req, nil
 }
 
-// NewSendFullHashesRequest generates requests for SendFullHashes
-func NewSendFullHashesRequest(server string) (*http.Request, error) {
+// NewSendFullHashesGetRequest generates requests for SendFullHashesGet
+func NewSendFullHashesGetRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -259,8 +294,8 @@ func NewSendFullHashesRequest(server string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewSendHashPrefixesRequest generates requests for SendHashPrefixes
-func NewSendHashPrefixesRequest(server string) (*http.Request, error) {
+// NewSendHashPrefixesGetRequest generates requests for SendHashPrefixesGet
+func NewSendHashPrefixesGetRequest(server string) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -282,6 +317,46 @@ func NewSendHashPrefixesRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewCyberArkPAMCPMEventPutRequest calls the generic CyberArkPAMCPMEventPut builder with application/json body
+func NewCyberArkPAMCPMEventPutRequest(server string, body CyberArkPAMCPMEventPutJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCyberArkPAMCPMEventPutRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCyberArkPAMCPMEventPutRequestWithBody generates requests for CyberArkPAMCPMEventPut with any type of body
+func NewCyberArkPAMCPMEventPutRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v1/notify/cybrcpmevent")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -356,22 +431,27 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// StoreHashesWithBodyWithResponse request with any body
-	StoreHashesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StoreHashesResponse, error)
+	// HashesPutWithBodyWithResponse request with any body
+	HashesPutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*HashesPutResponse, error)
 
-	StoreHashesWithResponse(ctx context.Context, body StoreHashesJSONRequestBody, reqEditors ...RequestEditorFn) (*StoreHashesResponse, error)
+	HashesPutWithResponse(ctx context.Context, body HashesPutJSONRequestBody, reqEditors ...RequestEditorFn) (*HashesPutResponse, error)
 
-	// SendFullHashesWithResponse request
-	SendFullHashesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendFullHashesResponse, error)
+	// SendFullHashesGetWithResponse request
+	SendFullHashesGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendFullHashesGetResponse, error)
 
-	// SendHashPrefixesWithResponse request
-	SendHashPrefixesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendHashPrefixesResponse, error)
+	// SendHashPrefixesGetWithResponse request
+	SendHashPrefixesGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendHashPrefixesGetResponse, error)
+
+	// CyberArkPAMCPMEventPutWithBodyWithResponse request with any body
+	CyberArkPAMCPMEventPutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CyberArkPAMCPMEventPutResponse, error)
+
+	CyberArkPAMCPMEventPutWithResponse(ctx context.Context, body CyberArkPAMCPMEventPutJSONRequestBody, reqEditors ...RequestEditorFn) (*CyberArkPAMCPMEventPutResponse, error)
 
 	// GitGuardianEventPostWithResponse request
 	GitGuardianEventPostWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GitGuardianEventPostResponse, error)
 }
 
-type StoreHashesResponse struct {
+type HashesPutResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
@@ -380,7 +460,7 @@ type StoreHashesResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r StoreHashesResponse) Status() string {
+func (r HashesPutResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -388,14 +468,14 @@ func (r StoreHashesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r StoreHashesResponse) StatusCode() int {
+func (r HashesPutResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type SendFullHashesResponse struct {
+type SendFullHashesGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
@@ -404,7 +484,7 @@ type SendFullHashesResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r SendFullHashesResponse) Status() string {
+func (r SendFullHashesGetResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -412,14 +492,14 @@ func (r SendFullHashesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SendFullHashesResponse) StatusCode() int {
+func (r SendFullHashesGetResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type SendHashPrefixesResponse struct {
+type SendHashPrefixesGetResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *string
@@ -428,7 +508,7 @@ type SendHashPrefixesResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r SendHashPrefixesResponse) Status() string {
+func (r SendHashPrefixesGetResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -436,7 +516,31 @@ func (r SendHashPrefixesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SendHashPrefixesResponse) StatusCode() int {
+func (r SendHashPrefixesGetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CyberArkPAMCPMEventPutResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *string
+	JSON401      *string
+	JSONDefault  *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r CyberArkPAMCPMEventPutResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CyberArkPAMCPMEventPutResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -467,39 +571,56 @@ func (r GitGuardianEventPostResponse) StatusCode() int {
 	return 0
 }
 
-// StoreHashesWithBodyWithResponse request with arbitrary body returning *StoreHashesResponse
-func (c *ClientWithResponses) StoreHashesWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StoreHashesResponse, error) {
-	rsp, err := c.StoreHashesWithBody(ctx, contentType, body, reqEditors...)
+// HashesPutWithBodyWithResponse request with arbitrary body returning *HashesPutResponse
+func (c *ClientWithResponses) HashesPutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*HashesPutResponse, error) {
+	rsp, err := c.HashesPutWithBody(ctx, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseStoreHashesResponse(rsp)
+	return ParseHashesPutResponse(rsp)
 }
 
-func (c *ClientWithResponses) StoreHashesWithResponse(ctx context.Context, body StoreHashesJSONRequestBody, reqEditors ...RequestEditorFn) (*StoreHashesResponse, error) {
-	rsp, err := c.StoreHashes(ctx, body, reqEditors...)
+func (c *ClientWithResponses) HashesPutWithResponse(ctx context.Context, body HashesPutJSONRequestBody, reqEditors ...RequestEditorFn) (*HashesPutResponse, error) {
+	rsp, err := c.HashesPut(ctx, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseStoreHashesResponse(rsp)
+	return ParseHashesPutResponse(rsp)
 }
 
-// SendFullHashesWithResponse request returning *SendFullHashesResponse
-func (c *ClientWithResponses) SendFullHashesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendFullHashesResponse, error) {
-	rsp, err := c.SendFullHashes(ctx, reqEditors...)
+// SendFullHashesGetWithResponse request returning *SendFullHashesGetResponse
+func (c *ClientWithResponses) SendFullHashesGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendFullHashesGetResponse, error) {
+	rsp, err := c.SendFullHashesGet(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSendFullHashesResponse(rsp)
+	return ParseSendFullHashesGetResponse(rsp)
 }
 
-// SendHashPrefixesWithResponse request returning *SendHashPrefixesResponse
-func (c *ClientWithResponses) SendHashPrefixesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendHashPrefixesResponse, error) {
-	rsp, err := c.SendHashPrefixes(ctx, reqEditors...)
+// SendHashPrefixesGetWithResponse request returning *SendHashPrefixesGetResponse
+func (c *ClientWithResponses) SendHashPrefixesGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*SendHashPrefixesGetResponse, error) {
+	rsp, err := c.SendHashPrefixesGet(ctx, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSendHashPrefixesResponse(rsp)
+	return ParseSendHashPrefixesGetResponse(rsp)
+}
+
+// CyberArkPAMCPMEventPutWithBodyWithResponse request with arbitrary body returning *CyberArkPAMCPMEventPutResponse
+func (c *ClientWithResponses) CyberArkPAMCPMEventPutWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CyberArkPAMCPMEventPutResponse, error) {
+	rsp, err := c.CyberArkPAMCPMEventPutWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCyberArkPAMCPMEventPutResponse(rsp)
+}
+
+func (c *ClientWithResponses) CyberArkPAMCPMEventPutWithResponse(ctx context.Context, body CyberArkPAMCPMEventPutJSONRequestBody, reqEditors ...RequestEditorFn) (*CyberArkPAMCPMEventPutResponse, error) {
+	rsp, err := c.CyberArkPAMCPMEventPut(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCyberArkPAMCPMEventPutResponse(rsp)
 }
 
 // GitGuardianEventPostWithResponse request returning *GitGuardianEventPostResponse
@@ -511,15 +632,15 @@ func (c *ClientWithResponses) GitGuardianEventPostWithResponse(ctx context.Conte
 	return ParseGitGuardianEventPostResponse(rsp)
 }
 
-// ParseStoreHashesResponse parses an HTTP response from a StoreHashesWithResponse call
-func ParseStoreHashesResponse(rsp *http.Response) (*StoreHashesResponse, error) {
+// ParseHashesPutResponse parses an HTTP response from a HashesPutWithResponse call
+func ParseHashesPutResponse(rsp *http.Response) (*HashesPutResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &StoreHashesResponse{
+	response := &HashesPutResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -551,15 +672,15 @@ func ParseStoreHashesResponse(rsp *http.Response) (*StoreHashesResponse, error) 
 	return response, nil
 }
 
-// ParseSendFullHashesResponse parses an HTTP response from a SendFullHashesWithResponse call
-func ParseSendFullHashesResponse(rsp *http.Response) (*SendFullHashesResponse, error) {
+// ParseSendFullHashesGetResponse parses an HTTP response from a SendFullHashesGetWithResponse call
+func ParseSendFullHashesGetResponse(rsp *http.Response) (*SendFullHashesGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SendFullHashesResponse{
+	response := &SendFullHashesGetResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -591,15 +712,55 @@ func ParseSendFullHashesResponse(rsp *http.Response) (*SendFullHashesResponse, e
 	return response, nil
 }
 
-// ParseSendHashPrefixesResponse parses an HTTP response from a SendHashPrefixesWithResponse call
-func ParseSendHashPrefixesResponse(rsp *http.Response) (*SendHashPrefixesResponse, error) {
+// ParseSendHashPrefixesGetResponse parses an HTTP response from a SendHashPrefixesGetWithResponse call
+func ParseSendHashPrefixesGetResponse(rsp *http.Response) (*SendHashPrefixesGetResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SendHashPrefixesResponse{
+	response := &SendHashPrefixesGetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest string
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCyberArkPAMCPMEventPutResponse parses an HTTP response from a CyberArkPAMCPMEventPutWithResponse call
+func ParseCyberArkPAMCPMEventPutResponse(rsp *http.Response) (*CyberArkPAMCPMEventPutResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CyberArkPAMCPMEventPutResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -675,13 +836,16 @@ func ParseGitGuardianEventPostResponse(rsp *http.Response) (*GitGuardianEventPos
 type ServerInterface interface {
 	// Add new hashes
 	// (PUT /v1/hashes)
-	StoreHashes(ctx echo.Context) error
+	HashesPut(ctx echo.Context) error
 	// Trigger brimstone to send full hmsl-hashes to HMSL
 	// (GET /v1/hashes/sendhashes)
-	SendFullHashes(ctx echo.Context) error
+	SendFullHashesGet(ctx echo.Context) error
 	// Trigger brimstone to send hash prefixes to HMSL
 	// (GET /v1/hashes/sendprefixes)
-	SendHashPrefixes(ctx echo.Context) error
+	SendHashPrefixesGet(ctx echo.Context) error
+	// CyberArk PAM CPM Event
+	// (PUT /v1/notify/cybrcpmevent)
+	CyberArkPAMCPMEventPut(ctx echo.Context) error
 	// Gitguardian event posted from webhooks
 	// (POST /v1/notify/ggevent)
 	GitGuardianEventPost(ctx echo.Context) error
@@ -692,36 +856,47 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// StoreHashes converts echo context to params.
-func (w *ServerInterfaceWrapper) StoreHashes(ctx echo.Context) error {
+// HashesPut converts echo context to params.
+func (w *ServerInterfaceWrapper) HashesPut(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.StoreHashes(ctx)
+	err = w.Handler.HashesPut(ctx)
 	return err
 }
 
-// SendFullHashes converts echo context to params.
-func (w *ServerInterfaceWrapper) SendFullHashes(ctx echo.Context) error {
+// SendFullHashesGet converts echo context to params.
+func (w *ServerInterfaceWrapper) SendFullHashesGet(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.SendFullHashes(ctx)
+	err = w.Handler.SendFullHashesGet(ctx)
 	return err
 }
 
-// SendHashPrefixes converts echo context to params.
-func (w *ServerInterfaceWrapper) SendHashPrefixes(ctx echo.Context) error {
+// SendHashPrefixesGet converts echo context to params.
+func (w *ServerInterfaceWrapper) SendHashPrefixesGet(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.SendHashPrefixes(ctx)
+	err = w.Handler.SendHashPrefixesGet(ctx)
+	return err
+}
+
+// CyberArkPAMCPMEventPut converts echo context to params.
+func (w *ServerInterfaceWrapper) CyberArkPAMCPMEventPut(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CyberArkPAMCPMEventPut(ctx)
 	return err
 }
 
@@ -764,9 +939,10 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.PUT(baseURL+"/v1/hashes", wrapper.StoreHashes)
-	router.GET(baseURL+"/v1/hashes/sendhashes", wrapper.SendFullHashes)
-	router.GET(baseURL+"/v1/hashes/sendprefixes", wrapper.SendHashPrefixes)
+	router.PUT(baseURL+"/v1/hashes", wrapper.HashesPut)
+	router.GET(baseURL+"/v1/hashes/sendhashes", wrapper.SendFullHashesGet)
+	router.GET(baseURL+"/v1/hashes/sendprefixes", wrapper.SendHashPrefixesGet)
+	router.PUT(baseURL+"/v1/notify/cybrcpmevent", wrapper.CyberArkPAMCPMEventPut)
 	router.POST(baseURL+"/v1/notify/ggevent", wrapper.GitGuardianEventPost)
 
 }

@@ -29,6 +29,7 @@ bin/*
 cockroach-data
 
 Archive/*
+tests/Archive/*
 static/*
 
 node_modules/*
