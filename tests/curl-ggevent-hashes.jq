@@ -1,4 +1,4 @@
-{"safename": "safename2",
+{"safename": $SAFENAME,
  "hashes":[
      {"name":$ACCTID, "hash":$HMSLHASH}
  ]}

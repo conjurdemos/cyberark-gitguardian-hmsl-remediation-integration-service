@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 export HOST="${1:-http://127.0.0.1:9191}"
+export SAFENAME="${2:-safename2}"
 
 if ! command -v ./bin/randchar; then
     echo "Run test script from project base dir"
@@ -16,7 +17,7 @@ lt=$(./bin/randchar -n 4 -a "1234567890")
 rt=$(./bin/randchar -n 2 -a "1234567890")
 acctid="${lt}_${rt}"
 
-jq -n --arg HMSLHASH "$hashval" --arg ACCTID "$acctid" -f ./tests/curl-ggevent-hashes.jq > ./tests/curl-ggevent-hashes.json
+jq -n --arg SAFENAME "$SAFENAME" --arg HMSLHASH "$hashval" --arg ACCTID "$acctid" -f ./tests/curl-ggevent-hashes.jq > ./tests/curl-ggevent-hashes.json
 jq -n --arg HMSLHASH "$hashval" -f ./tests/ggevent-incident-body.jq > ./tests/ggevent-incident-body.json
 
 curl -D - -X PUT "${HOST}/v1/hashes" \

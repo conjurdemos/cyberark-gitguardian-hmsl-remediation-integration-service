@@ -12,7 +12,7 @@ paths:
   /v1/hashes:
     put:
       summary: Add new hashes
-      operationId: "StoreHashes"
+      operationId: "HashesPut"
       description: "/v1/hashes receives list of hashes and stores them"
       parameters: []
       requestBody:
@@ -46,7 +46,7 @@ paths:
   /v1/hashes/sendprefixes:
     get:
       summary: Trigger brimstone to send hash prefixes to HMSL
-      operationId: "SendHashPrefixes"
+      operationId: "SendHashPrefixesGet"
       description: "/v1/hashes/sendprefixes sends hash prefixes to HMSL"
       parameters: []
       responses:
@@ -73,7 +73,7 @@ paths:
   /v1/hashes/sendhashes:
     get:
       summary: Trigger brimstone to send full hmsl-hashes to HMSL
-      operationId: "SendFullHashes"
+      operationId: "SendFullHashesGet"
       description: "/v1/hashes/sendhashes sends full hmsl-hashes to HMSL"
       parameters: []
       responses:
@@ -124,7 +124,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
       security:
-        - BearerAuth: []          
+        - BearerAuth: []
+  /v1/notify/cybrcpmevent:
+    put:
+      summary: "CyberArk PAM CPM Event"
+      operationId: "CyberArkPAMCPMEventPut"
+      description: "CyberArk PAM CPM Event endpoint"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/HashBatch"
+      responses:
+        200:
+          description: "receive PAM CPM event and store hashes received from CPM"
+          content:
+            application/json:
+              schema:
+                type: "string"
+        401:
+          description: "401 Nope, Not Authz"
+          content:
+            application/json:
+              schema:
+                type: "string"                
+        default:
+          description: "unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BearerAuth: []                
 components:
   securitySchemes:
     BearerAuth:

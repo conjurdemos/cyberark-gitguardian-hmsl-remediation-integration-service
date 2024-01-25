@@ -32,7 +32,7 @@ type Brimstone struct {
 	PAMConfig  *pam.Config
 }
 
-// PAM Vault Safe list of Hashes (de-normalized table)
+// PAM Vault Safe list of Hashes with accountid and accountname (de-normalized table)
 type SafeHash struct {
 	gorm.Model
 	Safename string
@@ -80,8 +80,8 @@ func sendBrimstoneError(ctx echo.Context, code int, message string) error {
 	return err
 }
 
-// StoreHashes - PUT /v1/hashes
-func (b Brimstone) StoreHashes(ctx echo.Context) error {
+// HashesPut - PUT /v1/hashes
+func (b Brimstone) HashesPut(ctx echo.Context) error {
 	db := b.Db
 
 	var hashbatch HashBatch
@@ -111,7 +111,7 @@ func (b Brimstone) StoreHashes(ctx echo.Context) error {
 	return result.Error
 }
 
-// Safe already exists, save versions of hashes
+// SaveExistingSafeHashes - Safe already exists, save versions of hashes
 func (b Brimstone) SaveExistingSafeHashes(ctx echo.Context, batch HashBatch) error {
 	db := b.Db
 
@@ -177,8 +177,8 @@ func (b Brimstone) SaveExistingSafeHashes(ctx echo.Context, batch HashBatch) err
 	return nil
 }
 
-// SendHashPrefixes - GET /v1/hashes/sendprefixes
-func (b Brimstone) SendHashPrefixes(ctx echo.Context) error {
+// SendHashPrefixesGet - GET /v1/hashes/sendprefixes
+func (b Brimstone) SendHashPrefixesGet(ctx echo.Context) error {
 	db := b.Db
 	hmslclient := b.HMSLClient
 	contextctx := context.TODO()
@@ -225,8 +225,8 @@ func (b Brimstone) SendHashPrefixes(ctx echo.Context) error {
 	return err
 }
 
-// SendFullHashes - GET /v1/hashes/sendhashes
-func (b Brimstone) SendFullHashes(ctx echo.Context) error {
+// SendFullHashesGet - GET /v1/hashes/sendhashes
+func (b Brimstone) SendFullHashesGet(ctx echo.Context) error {
 	db := b.Db
 	hmslclient := b.HMSLClient
 	contextctx := context.TODO()
@@ -399,9 +399,67 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 		msg := fmt.Sprintf("New account created, %s, for %s", newaccount.ID, *event.Incident.GitguardianUrl)
 		return sendBrimstoneError(ctx, http.StatusOK, msg)
 	}
-
 }
 
+// CyberArkPAMCPMEventPut receive CPM plugin request
+func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
+	db := b.Db
+	pamconfig := b.PAMConfig
+
+	// CPM will usually send account name (not account id)
+
+	var event HashBatch
+	err := ctx.Bind(&event)
+	if err != nil {
+		return sendBrimstoneError(ctx, http.StatusBadRequest, "Invalid format for CPM Event")
+	}
+
+	if event.Safename == "" || len(event.Hashes) == 0 {
+		return fmt.Errorf("No hashes passed in")
+	}
+
+	client := pam.NewClient(pamconfig.PCloudURL, *pamconfig)
+	err = client.RefreshSessionToken()
+	if err != nil {
+		log.Printf("Error refreshing PAM session token: %s\n", err.Error())
+		return sendBrimstoneError(ctx, http.StatusBadGateway, "Unable to obtain PAM session token")
+	}
+
+	// Loookup acount id based on account name
+	accountid, rescode, errFetchId := client.FetchAccountIdFromAccountName(event.Safename, event.Hashes[0].Name)
+	if rescode > 299 || errFetchId != nil {
+		return fmt.Errorf("error with result code, %d: %s", rescode, errFetchId.Error())
+	}
+
+	hashbatch := HashBatch{
+		Safename: event.Safename,
+		Hashes: []Hash{
+			{Name: accountid, Hash: event.Hashes[0].Hash},
+		},
+	}
+
+	var hashes []SafeHash
+	result := db.Limit(1).Where(&SafeHash{Safename: hashbatch.Safename}).Find(&hashes)
+	if result.RowsAffected != 0 {
+		return b.SaveExistingSafeHashes(ctx, hashbatch)
+	}
+
+	// new safe with new hashe(s)
+	var newsafehashes []SafeHash
+	for i := 0; i < len(hashbatch.Hashes); i++ {
+		newhash := SafeHash{
+			Safename: hashbatch.Safename,
+			Name:     hashbatch.Hashes[i].Name,
+			Hash:     hashbatch.Hashes[i].Hash,
+		}
+		newsafehashes = append(newsafehashes, newhash)
+	}
+	result = db.CreateInBatches(newsafehashes, 100)
+
+	return result.Error
+}
+
+// FindAccountID - given hmslhash return list of accountids from the db
 func (b Brimstone) FindAccountID(hmslhash string) ([]string, error) {
 	db := b.Db
 	var hashes []SafeHash
@@ -414,6 +472,8 @@ func (b Brimstone) FindAccountID(hmslhash string) ([]string, error) {
 	}
 	return ids, nil
 }
+
+// FetchHashes - given safename return list of hmsl hashes from the db associated to that safe
 func (b Brimstone) FetchHashes(safename string, stats *SendHashesStats) (*[]string, error) {
 	db := b.Db
 
@@ -443,6 +503,7 @@ func (b Brimstone) FetchHashes(safename string, stats *SendHashesStats) (*[]stri
 	return &hashvals, nil
 }
 
+// FetchPrefixes - given safename return list of hmsl hash prefixes from db
 func (b Brimstone) FetchPrefixes(safename string, stats *SendHashesStats) (*[]string, error) {
 	db := b.Db
 
@@ -493,6 +554,7 @@ func (b Brimstone) FetchPrefixes(safename string, stats *SendHashesStats) (*[]st
 	return &validprefixes, nil
 }
 
+// ChangePasswordFromHash - given hmslhash lookup accountid and call to pam api to change password
 func (b Brimstone) ChangePasswordFromHash(ctx echo.Context, hmslhash string) error {
 	pamconfig := b.PAMConfig
 	client := pam.NewClient(pamconfig.PCloudURL, *pamconfig)
@@ -519,7 +581,7 @@ func (b Brimstone) ChangePasswordFromHash(ctx echo.Context, hmslhash string) err
 	return nil
 }
 
-// TODO: (low priority) add vault remediation logic for prefix responses
+// HandlePrefixes - TODO: (low priority) add vault remediation logic for prefix responses
 func HandlePrefixes(hashes []string, responses *hmsl.BatchPrefixesV1PrefixesPostResponse) *hmsl.PrefixesResponse {
 	var result hmsl.PrefixesResponse
 	hints := make(map[string]string)
