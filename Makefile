@@ -14,6 +14,7 @@ BRIMSTONE_OPENAPI_SPEC := api/brimstone.yaml
 
 DATADIR := ./data
 
+.PHONY: Makefile scripts/common.makefile
 include scripts/common.makefile
 export
 
@@ -102,7 +103,7 @@ build-all-bins: build-brimstone build-hailstone build-hmsl-client build-gg-clien
 ##
 ## Helpers
 ##
-initialize-cockroach-dev: | start-cockroach-dev
+initialize-cockroach-dev: | start-cockroach-dev  ## Start and Initialize CockraochDB dev instance
 	cockroach sql --insecure --user=root --host=127.0.0.1 -f sql/00_initialize.sql
 
 start-cockroach-dev:  ## Start local cockroach db dev instance
@@ -137,5 +138,6 @@ vardump::
 
 .PHONY: vardump clean realclean
 
+.PHONY: scripts/docs.makefile scripts/openapi.makefile
 include scripts/docs.makefile
 include scripts/openapi.makefile

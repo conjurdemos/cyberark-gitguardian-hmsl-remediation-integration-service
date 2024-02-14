@@ -427,8 +427,11 @@ func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
 
 	// Loookup acount id based on account name
 	accountid, rescode, errFetchId := client.FetchAccountIdFromAccountName(event.Safename, event.Hashes[0].Name)
-	if rescode > 299 || errFetchId != nil {
-		return fmt.Errorf("error with result code, %d: %s", rescode, errFetchId.Error())
+	if rescode == 404 {
+		return sendBrimstoneError(ctx, http.StatusNotFound, fmt.Sprintf("error safename not matched to account id: %s", event.Safename))
+	}
+	if rescode > 299 && errFetchId != nil {
+		return sendBrimstoneError(ctx, rescode, fmt.Sprintf("error with result code, %d: %s", rescode, errFetchId.Error()))
 	}
 
 	hashbatch := HashBatch{
