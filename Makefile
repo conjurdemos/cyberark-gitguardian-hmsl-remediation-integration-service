@@ -7,7 +7,7 @@
 BINDIR := ./bin
 STATICDIR := ./static/
 
-DOCFILES := README.md README-design.md CONTRIBUTING.md 
+DOCFILES := README.md README-design.md CONTRIBUTING.md  README-pcloud.md
 DOCFILE_HTML_TARGETS := $(foreach var,$(DOCFILES),$(STATICDIR)$(var).html) gen-brimstone-doc
 
 BRIMSTONE_OPENAPI_SPEC := api/brimstone.yaml
