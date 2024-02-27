@@ -33,13 +33,13 @@ Updated:  <2023-12-28 13:45:25 david.hisel>
 
 ## Summary
 
-Brimstone is a service that complements the GitGuardian service HasMySecretLeaked (HMSL).  It takes in and stores the HMSL hashes to facilitate remediation actions such as rotating a password if one is found to be leaked.
+Brimstone is a service that complements the [GitGuardian](https://www.gitguardian.com/) (GG) service [HasMySecretLeaked]( https://www.gitguardian.com/hasmysecretleaked) (HMSL).  It takes in and stores the HMSL hashes to facilitate remediation actions such as rotating a password if one is found to be leaked.
 
 ## Use Cases
 
 | # | Trigger |  Data Source | Findings | Action | Use Case |
 | - | - | - | - | - | - |
-| 1 | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | No Matches | Do Nothing | If hash prefixes from brimstone sent to HMSL return no matches, then this indicates no leaks of the PAM Accounts being tracked in Brimstone. |
+| 1 | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | No Matches | Do Nothing | If hash prefixes from Brimstone sent to HMSL return no matches, then this indicates no leaks of the PAM Accounts being tracked in Brimstone. |
 | 2 | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | Matches Returned | For each "Matches" item, if it exists in Brimstone, then _Change Account Password_ | If hash prefixes from Brimstone sent to HMSL return matches, then this indicates that the PAM Account secret is leaked. |
 | 3 | GG Incident | GG Custom Webhook Incident | No Matches In Brimstone | _Add Account_ in Pending Safe | GG tracks our own repos, so, if we find a secret in our codebase, immediately provision it. |
 | 4 | GG Incident | GG Custom Webhook Incident | Matches In Brimstone | _Change Account Password_ | GG tracks our own repos, so, if we find a secret in our codebase, and it matches an account in the PAM Vault rotate it. |
@@ -52,17 +52,17 @@ hide footbox
 
 participant Brimstone as "Brimstone"
 participant PAM as "PAM"
-participant GG as "Git Guardian"
+participant GG as "GitGuardian"
 
 == Remediate Existing Exposed Credential - Change Account Password  ==
 GG -> GG: Incident Triggers Custom Webhook
-GG -> Brimstone: Send "hmsl_hash" to brimstone
+GG -> Brimstone: Send "hmsl_hash" to Brimstone
 Brimstone -> Brimstone: Lookup Account ID from "hmsl_hash"
 Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Accounts/<AccountID>/Change/
 
 == Remediate Non-tracked Exposed Credential - Add Account  ==
 GG -> GG: Incident Triggers Custom Webhook
-GG -> Brimstone: Send "hmsl_hash" to brimstone
+GG -> Brimstone: Send "hmsl_hash" to Brimstone
 Brimstone -> Brimstone: Lookup Account ID from "hmsl_hash"
 Brimstone -> PAM: Create account in "Pending" safe\nPOST /PasswordVault/API/Accounts/
 @enduml
@@ -96,7 +96,7 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 ### Notable: Remediate Non-tracked Exposed Credential - Add Account
 
-* When GitGuardian sends an incident to brimstone, and there is no corresponding hmsl_hash, brimstone will add an account to a pending safe.  When looking in the pending safe, and
+* When GitGuardian sends an incident to Brimstone, and there is no corresponding hmsl_hash, Brimstone will add an account to a pending safe.  When looking in the pending safe, and
   * "Address" will contain the GitGuardian incident url
   * "Platform ID" will be "DummyPlatform"
   * "Username" and Account "Name" will be derived from the GG incident URL
@@ -118,7 +118,7 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
   * Requires:
     * Content-type header, `Content-type: application/json`
     * Authorization Header, `Authorization: Bearer [[api key]]`
-  * CPM plugin uses this endpoint to update hashes in brimstone
+  * CPM plugin uses this endpoint to update hashes in Brimstone
   * Brimstone to accept payload, add new hashes and rotate hashes to Current-1, Current-2
   * Request body is `HashBatch` structure as serialized JSON
   * Example curl call:
@@ -143,11 +143,11 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 * **GET /v1/hashes/sendprefixes**
   * Requires Authorization Header, `Authorization: Bearer [[api key]]`
-  * Trigger brimstone to push current list of hashes as prefixes to HMSL
+  * Trigger Brimstone to push current list of hashes as prefixes to HMSL
 
 * **GET /v1/hashes/sendhashes**
   * Requires Authorization Header, `Authorization: Bearer [[api key]]`
-  * Trigger brimstone to push current list of full hashes to HMSL
+  * Trigger Brimstone to push current list of full hashes to HMSL
 
 * **POST /v1/notify/ggevent**
   * Brimstone will verify the incoming request per [GG Custom Webhook Doc](https://docs.gitguardian.com/platform/monitor-perimeter/notifiers-integrations/custom-webhook#how-to-verify-the-payload-signature)
@@ -166,7 +166,7 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 | -ggapitokenvar     | `GG_API_TOKEN_VARNAME`                                                                   | Y        | GG API token can be retrieved from GG Dashboard -> API -> Personal access tokens (default env var name: `GG_API_TOKEN`)         |
 | -ggwebhooktokenvar | `GG_WEBHOOK_TOKEN_VARNAME`                                                               | Y        | GG API Token env var contains GG API token to use (default env var name: `GG_WEBHOOK_TOKEN`)                                    |
 | -dburl             | `postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone` | N        | Database URL, default value is `postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone`         |
-| -port              | `9191`                                                                                   | N        | Port whereon brimstone listens, default: 9191                                                                                   |
+| -port              | `9191`                                                                                   | N        | Port whereon Brimstone listens, default: 9191                                                                                   |
 | -idtenanturl       | `https://EXAMPLE.id.cyberark.cloud`                                                      | Y        | PAM config ID tenant URL                                                                                                        |
 | -pcloudurl         | `https://EXAMPLE.privilegecloud.cyberark.cloud`                                          | Y        | PAM config Privilege Cloud URL                                                                                                  |
 | -pamuser           | pam user                                                                                 | Y        | PAM config PAM User                                                                                                             |
@@ -192,7 +192,7 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 ### Setup
 
-* Create GitGuardian account
+* Create a [GitGuardian account](https://dashboard.gitguardian.com/auth/signup?utm_source=github&utm_medium=product&utm_campaign=brimstone_repo)
 * Create a GitHub repo and connect it to Gitguardian
 * Create a safe in PAM vault to be used for new accounts, for this example "Pending" safe is used
 * Deploy Brimstone where it can be accessed by GG custom webhook (see table for parameters)
@@ -205,21 +205,20 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 ### HMSL Leak Flow
 
-* Run the "GG Incident Flow" to generate an GG Incident, and create an account in PAM vault safe
-* Run Hailstone app to load brimstone with the secrets from the pending safe (Note: a user that has access to the pending safe is required)
-* Call the send full hashes endpoint in Brimstone `GET /v1/hashes/sendfullhashes` -- this will send all the hashes in brimstone to the HMSL service
+* Run the "GG Incident Flow" to generate a GG Incident, and create an account in PAM vault safe
+* Run Hailstone app to load Brimstone with the secrets from the pending safe (Note: a user that has access to the pending safe is required)
+* Call the send full hashes endpoint in Brimstone `GET /v1/hashes/sendfullhashes` -- this will send all the hashes in Brimstone to the HMSL service
 * Review the contents of the pending safe and find the account, it should show that it requires a password change
 
 ## References
 
-* <https://www.gitguardian.com/hasmysecretleaked>
-* <https://blog.gitguardian.com/announcing-has-my-secret-leaked>
-* <https://blog.gitguardian.com/hasmysecretleaked-building-a-trustless-and-secure-protocol>
-* <https://api.hasmysecretleaked.com/docs>
+* [Learn more about HasMySecretLeaked](https://blog.gitguardian.com/announcing-has-my-secret-leaked/?utm_source=github&utm_medium=product&utm_campaign=brimstone_repo)
+* [The Trustless and Secure Protocol powering HasMySecretLeaked](https://blog.gitguardian.com/hasmysecretleaked-building-a-trustless-and-secure-protocol/?utm_source=github&utm_medium=product&utm_campaign=brimstone_repo)
+* [Documentation of HasMySecretLeaked's API](https://api.hasmysecretleaked.com/docs/?utm_source=github&utm_medium=product&utm_campaign=brimstone_repo)
 
 * Other projects
-  * <https://github.com/conjurdemos>
-  * <https://github.com/cyberark>
+  * [CyberArk Conjur](https://github.com/conjurdemos)
+  * [CyberArk](https://github.com/cyberark)
 
 ## Technologies
 
