@@ -7,13 +7,14 @@
 BINDIR := ./bin
 STATICDIR := ./static/
 
-DOCFILES := README.md README-design.md CONTRIBUTING.md 
+DOCFILES := README.md README-design.md CONTRIBUTING.md  README-pcloud.md
 DOCFILE_HTML_TARGETS := $(foreach var,$(DOCFILES),$(STATICDIR)$(var).html) gen-brimstone-doc
 
 BRIMSTONE_OPENAPI_SPEC := api/brimstone.yaml
 
 DATADIR := ./data
 
+.PHONY: Makefile scripts/common.makefile
 include scripts/common.makefile
 export
 
@@ -102,7 +103,7 @@ build-all-bins: build-brimstone build-hailstone build-hmsl-client build-gg-clien
 ##
 ## Helpers
 ##
-initialize-cockroach-dev: | start-cockroach-dev
+initialize-cockroach-dev: | start-cockroach-dev  ## Start and Initialize CockraochDB dev instance
 	cockroach sql --insecure --user=root --host=127.0.0.1 -f sql/00_initialize.sql
 
 start-cockroach-dev:  ## Start local cockroach db dev instance
@@ -137,5 +138,6 @@ vardump::
 
 .PHONY: vardump clean realclean
 
+.PHONY: scripts/docs.makefile scripts/openapi.makefile
 include scripts/docs.makefile
 include scripts/openapi.makefile
