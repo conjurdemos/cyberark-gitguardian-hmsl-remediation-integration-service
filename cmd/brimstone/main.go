@@ -6,21 +6,25 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	bs "github.com/davidh-cyberark/brimstone/pkg/brimstone"
 	gg "github.com/davidh-cyberark/brimstone/pkg/gitguardian"
 	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
 	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
+	"github.com/davidh-cyberark/brimstone/pkg/utils"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/caarlos0/env/v10"
 )
 
 const (
@@ -28,78 +32,59 @@ const (
 )
 
 var (
-	version                  = "dev"
-	TLS_SKIP_VERIFY          = false
-	DEBUG                    = false
-	API_KEY_VARNAME          = "BRIMSTONE_API_KEY"
-	GG_API_TOKEN_VARNAME     = "GG_API_TOKEN"
-	GG_WEBHOOK_TOKEN_VARNAME = "GG_WEBHOOK_TOKEN"
-
-	// postgres://<username>:<password>@<host>:<port>/<database>?<parameters>
-	LOCAL_DATABASE_URL = "postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone"
+	version = "dev"
+	DEBUG   = false
 )
 
+type config struct {
+	HmslUrl        string `env:"HMSL_URL" envDefault:"https://api.hasmysecretleaked.com"`
+	AudienceType   string `env:"HMSL_AUDIENCE_TYPE" envDefault:"hmsl"`
+	GgApiUrl       string `env:"GG_API_URL" envDefault:"https://api.gitguardian.com"`
+	GgApiToken     string `env:"GG_API_TOKEN,unset"`
+	GgWebhookToken string `env:"GG_WEBHOOK_TOKEN,required,unset"`
+	ApiKey         string `env:"BRIMSTONE_API_KEY,unset"`
+
+	DbUrl string `env:"DB_URL,required,unset"`
+	Port  uint16 `env:"PORT" envDefault:"9191"`
+
+	utils.BaseConfig
+}
+
 func main() {
-	url := flag.String("hmslurl", "https://api.hasmysecretleaked.com", "HMSL url where to send hashes (Used as audience when sending JWT request)")
-	audiencetype := flag.String("hmslaudtype", "hmsl", "Audience type for HMSL JWT request")
-	ggapiurl := flag.String("ggapiurl", "https://api.gitguardian.com", "GG API URL")
-	ggapitokenvar := flag.String("ggapitokenvar", GG_API_TOKEN_VARNAME, "GG API Token env var contains GG API token to use (default: GG_API_TOKEN)")
-	ggwebhooktokenvar := flag.String("ggwebhooktokenvar", GG_WEBHOOK_TOKEN_VARNAME, "GG API Token env var contains GG custom webhook token from settings (default: GG_WEBHOOK_TOKEN)")
-
-	apikeyvarname := flag.String("keyvar", API_KEY_VARNAME, "Name of env var from which to set brimstone's api key (default: BRIMSTONE_API_KEY)")
-
-	dburl := flag.String("dburl", LOCAL_DATABASE_URL, "Database URL")
-	port := flag.String("port", "9191", "port whereon brimstone listens (default: 9191)")
-
-	idtenanturl := flag.String("idtenanturl", "", "PAM config ID tenant URL")
-	pcloudurl := flag.String("pcloudurl", "", "PAM config Privilege Cloud URL")
-	pamuser := flag.String("pamuser", "", "PAM config PAM User")
-	pampass := flag.String("pampass", "", "PAM config PAM Pass")
-	safename := flag.String("safename", "", "PAM config PAM Safe Name")
-
-	tlsskipverify := flag.Bool("tls-skip-verify", false, "Skip TLS Verify when calling pam (for self-signed cert)")
+	e := echo.New()
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		e.Logger.Fatalf("failed to parse config: %+v\n", err)
+	}
 
 	ver := flag.Bool("version", false, "Print version")
 	debug := flag.Bool("d", false, "Enable debug settings")
 	flag.Parse()
 
-	databaseurl := *dburl
-	API_KEY_VARNAME = *apikeyvarname
-	GG_API_TOKEN_VARNAME = *ggapitokenvar
-	GG_WEBHOOK_TOKEN_VARNAME = *ggwebhooktokenvar
-
-	TLS_SKIP_VERIFY = *tlsskipverify
 	DEBUG = *debug
 
 	pamconfig := pam.Config{
-		IDTenantURL:     *idtenanturl,
-		PCloudURL:       *pcloudurl,
-		SafeName:        *safename,
-		PlatformID:      "DummyPlatform", // not enough info from GG incident to make this more specific
-		User:            *pamuser,
-		Pass:            *pampass,
-		TLS_SKIP_VERIFY: TLS_SKIP_VERIFY,
+		IDTenantURL:     cfg.IdTenantUrl,
+		PCloudURL:       cfg.PcloudUrl,
+		SafeName:        cfg.SafeName,
+		PlatformID:      cfg.PlatformID,
+		User:            cfg.PamUser,
+		Pass:            cfg.PamPass,
+		TLS_SKIP_VERIFY: cfg.TlsSkipVerify,
 	}
 
-	e := echo.New()
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set("config", cfg)
+			return next(c)
+		}
+	})
 
 	// Log all requests
 	e.Use(middleware.Logger())
 	if *ver {
 		e.Logger.Printf("Version: %s\n", version)
 		os.Exit(0)
-	}
-	_, ok := GetAPIKey()
-	if !ok {
-		log.Fatalf("must set env var, %s, with api key", API_KEY_VARNAME)
-	}
-
-	ggapitoken, ggok := GetGGAPIToken()
-	if !ggok {
-		log.Fatalf("must set env var, %s, with GG api token", GG_API_TOKEN_VARNAME)
-	}
-	if _, ggok := GetGGWebhookToken(); !ggok {
-		log.Fatalf("must set env var, %s, with GG webhook token", GG_WEBHOOK_TOKEN_VARNAME)
 	}
 
 	// Configure GG authentication
@@ -126,23 +111,31 @@ func main() {
 			return len(ggsig) > 0
 		},
 		Validator: func(key string, c echo.Context) (bool, error) {
-			brimstoneapikey, ok := GetAPIKey()
-			return (ok && key == brimstoneapikey), nil
+			cfg := c.Get("config").(config)
+			return key == cfg.ApiKey, nil
 		},
 	}))
 
-	// sqlite
-	// db, err := gorm.Open(sqlite.Open("brimstone.db"), &gorm.Config{})
-
-	// https://www.cockroachlabs.com/docs/v23.1/connection-parameters
-	db, err := gorm.Open(postgres.Open(databaseurl), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
+	// Connect to the database
+	var db *gorm.DB
+	{
+		var err error
+		if strings.HasPrefix(cfg.DbUrl, "postgres://") {
+			// https://www.cockroachlabs.com/docs/v23.1/connection-parameters
+			db, err = gorm.Open(postgres.Open(cfg.DbUrl), &gorm.Config{})
+		} else if strings.HasPrefix(cfg.DbUrl, "sqlite://") {
+			dbFilename := strings.TrimPrefix(cfg.DbUrl, "sqlite://")
+			db, err = gorm.Open(sqlite.Open(dbFilename), &gorm.Config{})
+		} else {
+			e.Logger.Fatalf("unsupported database url: %s", cfg.DbUrl)
+		}
+		if err != nil {
+			e.Logger.Fatal("failed to connect database")
+		}
 	}
 
 	ctx := context.TODO()
-
-	clientWithResponses, errClient := hmsl.NewClientAuthenticateWithGitGuardian(ctx, url, audiencetype, ggapiurl, &ggapitoken)
+	clientWithResponses, errClient := hmsl.NewClientAuthenticateWithGitGuardian(ctx, &cfg.HmslUrl, &cfg.AudienceType, &cfg.GgApiUrl, &cfg.GgApiToken)
 	if errClient != nil {
 		e.Logger.Fatalf("failed to create HMSL client: %s", errClient)
 	}
@@ -159,20 +152,12 @@ func main() {
 		e.Logger.Fatalf("failed to initialize database: %s", initdbErr)
 	}
 
-	e.Logger.Fatal(e.Start(net.JoinHostPort("0.0.0.0", *port)))
-}
-
-func GetAPIKey() (string, bool) {
-	return os.LookupEnv(API_KEY_VARNAME)
-}
-func GetGGAPIToken() (string, bool) {
-	return os.LookupEnv(GG_API_TOKEN_VARNAME)
-}
-func GetGGWebhookToken() (string, bool) {
-	return os.LookupEnv(GG_WEBHOOK_TOKEN_VARNAME)
+	server_addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(int(cfg.Port)))
+	e.Logger.Fatal(e.Start(server_addr))
 }
 
 func GGValidator(ggsig string, c echo.Context) (bool, error) {
+	cfg := c.Get("config").(config)
 	ggts := c.Request().Header.Get("timestamp")
 	if !strings.HasPrefix(ggsig, "sha256=") {
 		return false, fmt.Errorf("bad signature")
@@ -182,11 +167,7 @@ func GGValidator(ggsig string, c echo.Context) (bool, error) {
 	if bbErr != nil {
 		return false, fmt.Errorf("unable to read request body")
 	}
-	webhooktoken, ok := GetGGWebhookToken()
-	if !ok {
-		return false, fmt.Errorf("no webhook token set")
-	}
-	if ok := gg.ValidateGGPayload(ggsig, ggts, webhooktoken, bodyBytes); !ok {
+	if ok := gg.ValidateGGPayload(ggsig, ggts, cfg.GgWebhookToken, bodyBytes); !ok {
 		return false, fmt.Errorf("bad gg request")
 	}
 	return true, nil
