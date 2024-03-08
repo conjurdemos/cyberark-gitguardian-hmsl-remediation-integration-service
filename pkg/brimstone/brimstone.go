@@ -379,7 +379,7 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 			PlatformAccountProperties: pam.PlatformAccountProperties{},
 		}
 		newaccount, code, err := client.AddAccount(addreq)
-		if err != nil {
+		if err != nil || newaccount.ID == "" {
 			return sendBrimstoneError(ctx, code, "Unable to add PAM account from GG incident")
 		}
 

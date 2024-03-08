@@ -35,3 +35,9 @@ static/*
 node_modules/*
 package-lock.json
 package.json
+
+# Environment variables
+.env
+
+# SQLite databases
+*.sqlite
