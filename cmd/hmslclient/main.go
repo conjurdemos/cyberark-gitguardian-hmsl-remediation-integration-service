@@ -22,10 +22,21 @@ func main() {
 	ggapiurl := flag.String("ggapiurl", "https://api.gitguardian.com", "GG API URL, default: https://api.gitguardian.com")
 	ggapitoken := flag.String("ggapitoken", "", "API Token from GitGuardian Dashboard (HMSL uses GG for JWT auth)")
 	ver := flag.Bool("version", false, "Print version")
+	computehash := flag.String("computehash", "", "Compute hash print it out and exit")
 	flag.Parse()
 
 	if *ver {
 		log.Printf("Version: %s\n", version)
+		os.Exit(0)
+	}
+
+	if len(*computehash) > 0 {
+		hmslhash, err := hmsl.ComputeHash(*computehash)
+		if err != nil {
+			log.Fatalf("failed to compute HMSL hash: %s\n", err)
+		}
+
+		log.Printf("Secret: %s\nHash: %s\n", *computehash, hmslhash)
 		os.Exit(0)
 	}
 

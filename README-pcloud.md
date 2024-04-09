@@ -16,6 +16,13 @@ Updated:  <2024-02-21 16:38:42 david.hisel>
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+* [Brimstone Privilege Cloud Notes](#brimstone-privilege-cloud-notes)
+  * [Add Safe](#add-safe)
+  * [Create Brimstone Service User](#create-brimstone-service-user)
+  * [Associate Service User To Safe](#associate-service-user-to-safe)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Brimstone Privilege Cloud Notes
 
 
@@ -50,5 +57,3 @@ In the Privilege cloud UI, navigate to Policies -> Safes -> search for your safe
 5. After selecting your user, click on the next button
 6. Click on "Full" in The "select bar" at the top in the Permissions Presets.
 7. Click on the Add button
-
-

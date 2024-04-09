@@ -1,6 +1,6 @@
 # Makefile -*- Makefile -*-
 
-# Updated: <2024-01-16 15:24:57 david.hisel>
+# Updated: <2024/03/19 15:52:05>
 
 # LICENSE
 
@@ -73,6 +73,12 @@ build-brimstone: $(BINDIR)/brimstone  ## build the brimstone server BINDIR/brims
 $(BINDIR)/brimstone: VERSION pkg/brimstone/brimstone.go pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/client.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go $(BRIMSTONE_OPENAPI_SPEC)
 	$(GO) build -o $(BINDIR)/brimstone $(LDFLAGS) cmd/brimstone/main.go
 
+.PHONY: build-brimstone-cp
+build-brimstone-cp: $(BINDIR)/brimstone-cp  ## build the brimstone server BINDIR/brimstone-cp
+
+$(BINDIR)/brimstone-cp: VERSION pkg/brimstone/brimstone.go pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/client.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go $(BRIMSTONE_OPENAPI_SPEC)
+	$(GO) build -o $(BINDIR)/brimstone-cp $(LDFLAGS) cmd/brimstone-cp/main.go
+
 .PHONY: build-hailstone
 build-hailstone: $(BINDIR)/hailstone  ## build the hailstone loader BINDIR/hailstone
 
@@ -97,8 +103,14 @@ build-pam-client: $(BINDIR)/pam-client ## build the gg client BINDIR/gg-client
 $(BINDIR)/pam-client: VERSION cmd/pamclient/main.go pkg/privilegeaccessmanager/privilegeaccessmanager.go pkg/utils/utils.go
 	$(GO) build -o $(BINDIR)/pam-client $(LDFLAGS) cmd/pamclient/main.go
 
+.PHONY: build-cp-client
+build-cp-client: $(BINDIR)/cp-client ## build the gg client BINDIR/gg-client
+
+$(BINDIR)/cp-client: VERSION cmd/cpclient/main.go
+	$(GO) build -o $(BINDIR)/cp-client $(LDFLAGS) cmd/cpclient/main.go
+
 .PHONY: build-all-bins
-build-all-bins: build-brimstone build-hailstone build-hmsl-client build-gg-client build-pam-client build-randchar
+build-all-bins: build-brimstone build-hailstone build-brimstone-cp build-hmsl-client build-gg-client build-pam-client build-randchar build-cp-client
 
 ##
 ## Helpers
@@ -123,10 +135,12 @@ $(BINDIR)/randchar: VERSION cmd/randchar/main.go
 clean::
 	rm -f pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go
 	rm -f $(BINDIR)/brimstone
+	rm -f $(BINDIR)/brimstone-cp
 	rm -f $(BINDIR)/hailstone
 	rm -f $(BINDIR)/hmsl-client
 	rm -f $(BINDIR)/gg-client
 	rm -f $(BINDIR)/pam-client
+	rm -f $(BINDIR)/cp-client
 	rm -f $(BINDIR)/randchar
 	rm -f static/brimstone-spec/index.html
 

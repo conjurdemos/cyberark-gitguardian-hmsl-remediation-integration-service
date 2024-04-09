@@ -20,6 +20,7 @@
 # Go workspace file
 go.work
 
+data/*
 build/*
 .vscode/*
 *~
