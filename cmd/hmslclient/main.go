@@ -54,18 +54,6 @@ func main() {
 		log.Fatalf("failed to create HMSL client: %s", errClient)
 	}
 
-	respHealth, respHealthErr := clientWithResponses.HealthzHealthzGetWithResponse(ctx)
-	if respHealthErr != nil {
-		log.Fatalf("failed call to healthz: %s", respHealthErr)
-	}
-	log.Printf("Response: %s\n", respHealth.Status())
-
-	respReady, respReadyErr := clientWithResponses.ReadinessReadinessGetWithResponse(ctx)
-	if respReadyErr != nil {
-		log.Fatalf("failed call to readiness: %s", respReadyErr)
-	}
-	log.Printf("Readiness Status: (%d) %s\n", respReady.StatusCode(), respReady.Status())
-
 	prefixes := hmsl.BatchPrefixesV1PrefixesPostJSONRequestBody{
 		Prefixes: &[]string{"faa11", "bad22", "baac3"},
 	}

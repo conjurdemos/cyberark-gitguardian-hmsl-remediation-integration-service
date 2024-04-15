@@ -17,17 +17,23 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// APILocation Stores the location of an occurrence
-//
-// should be stored via `.dict(by_alias=True)`
+// APILocation The location of a secret occurrence.
 type APILocation struct {
 	U string `json:"u"`
 }
 
 // EncryptedSecretResponse defines model for EncryptedSecretResponse.
 type EncryptedSecretResponse struct {
-	Hint    string             `json:"hint"`
+	// Hint The hint of the secret, i.e. the hash of the hash of the secret
+	Hint string `json:"hint"`
+
+	// Payload The encrypted payload containing information about the secret, encrypted with AES256-GCM with the hash of the secret
 	Payload openapi_types.File `json:"payload"`
+}
+
+// HTTPExceptionDocumentationModel Model in pydantic for FastAPI HTTPException to be used in doc.
+type HTTPExceptionDocumentationModel struct {
+	Detail string `json:"detail"`
 }
 
 // HTTPValidationError defines model for HTTPValidationError.
@@ -57,12 +63,13 @@ type PrefixesResponse struct {
 
 // SecretResponse defines model for SecretResponse.
 type SecretResponse struct {
-	Count int    `json:"count"`
-	Hash  string `json:"hash"`
+	// Count Number of occurrences
+	Count int `json:"count"`
 
-	// Location Stores the location of an occurrence
-	//
-	// should be stored via `.dict(by_alias=True)`
+	// Hash The hash of the secret
+	Hash string `json:"hash"`
+
+	// Location Location of the first occurrence recorded for this secret
 	Location *APILocation `json:"location,omitempty"`
 }
 
@@ -225,12 +232,6 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// HealthzHealthzGet request
-	HealthzHealthzGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ReadinessReadinessGet request
-	ReadinessReadinessGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// BatchHashesV1HashesPostWithBody request with any body
 	BatchHashesV1HashesPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -243,30 +244,6 @@ type ClientInterface interface {
 	BatchPrefixesV1PrefixesPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BatchPrefixesV1PrefixesPost(ctx context.Context, body BatchPrefixesV1PrefixesPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-}
-
-func (c *Client) HealthzHealthzGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewHealthzHealthzGetRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ReadinessReadinessGet(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewReadinessReadinessGetRequest(c.Server)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
 }
 
 func (c *Client) BatchHashesV1HashesPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -327,60 +304,6 @@ func (c *Client) BatchPrefixesV1PrefixesPost(ctx context.Context, body BatchPref
 		return nil, err
 	}
 	return c.Client.Do(req)
-}
-
-// NewHealthzHealthzGetRequest generates requests for HealthzHealthzGet
-func NewHealthzHealthzGetRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/healthz")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewReadinessReadinessGetRequest generates requests for ReadinessReadinessGet
-func NewReadinessReadinessGetRequest(server string) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/readiness")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
 }
 
 // NewBatchHashesV1HashesPostRequest calls the generic BatchHashesV1HashesPost builder with application/json body
@@ -540,12 +463,6 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// HealthzHealthzGetWithResponse request
-	HealthzHealthzGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthzHealthzGetResponse, error)
-
-	// ReadinessReadinessGetWithResponse request
-	ReadinessReadinessGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ReadinessReadinessGetResponse, error)
-
 	// BatchHashesV1HashesPostWithBodyWithResponse request with any body
 	BatchHashesV1HashesPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BatchHashesV1HashesPostResponse, error)
 
@@ -560,55 +477,12 @@ type ClientWithResponsesInterface interface {
 	BatchPrefixesV1PrefixesPostWithResponse(ctx context.Context, body BatchPrefixesV1PrefixesPostJSONRequestBody, reqEditors ...RequestEditorFn) (*BatchPrefixesV1PrefixesPostResponse, error)
 }
 
-type HealthzHealthzGetResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *interface{}
-}
-
-// Status returns HTTPResponse.Status
-func (r HealthzHealthzGetResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r HealthzHealthzGetResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ReadinessReadinessGetResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *interface{}
-}
-
-// Status returns HTTPResponse.Status
-func (r ReadinessReadinessGetResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ReadinessReadinessGetResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type BatchHashesV1HashesPostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *HashesResponse
 	JSON422      *HTTPValidationError
+	JSON429      *HTTPExceptionDocumentationModel
 }
 
 // Status returns HTTPResponse.Status
@@ -632,6 +506,7 @@ type GetSecretV1PrefixPrefixGetResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *PrefixesResponse
 	JSON422      *HTTPValidationError
+	JSON429      *HTTPExceptionDocumentationModel
 }
 
 // Status returns HTTPResponse.Status
@@ -655,6 +530,7 @@ type BatchPrefixesV1PrefixesPostResponse struct {
 	HTTPResponse *http.Response
 	JSON200      *PrefixesResponse
 	JSON422      *HTTPValidationError
+	JSON429      *HTTPExceptionDocumentationModel
 }
 
 // Status returns HTTPResponse.Status
@@ -671,24 +547,6 @@ func (r BatchPrefixesV1PrefixesPostResponse) StatusCode() int {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
-}
-
-// HealthzHealthzGetWithResponse request returning *HealthzHealthzGetResponse
-func (c *ClientWithResponses) HealthzHealthzGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*HealthzHealthzGetResponse, error) {
-	rsp, err := c.HealthzHealthzGet(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseHealthzHealthzGetResponse(rsp)
-}
-
-// ReadinessReadinessGetWithResponse request returning *ReadinessReadinessGetResponse
-func (c *ClientWithResponses) ReadinessReadinessGetWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ReadinessReadinessGetResponse, error) {
-	rsp, err := c.ReadinessReadinessGet(ctx, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseReadinessReadinessGetResponse(rsp)
 }
 
 // BatchHashesV1HashesPostWithBodyWithResponse request with arbitrary body returning *BatchHashesV1HashesPostResponse
@@ -734,58 +592,6 @@ func (c *ClientWithResponses) BatchPrefixesV1PrefixesPostWithResponse(ctx contex
 	return ParseBatchPrefixesV1PrefixesPostResponse(rsp)
 }
 
-// ParseHealthzHealthzGetResponse parses an HTTP response from a HealthzHealthzGetWithResponse call
-func ParseHealthzHealthzGetResponse(rsp *http.Response) (*HealthzHealthzGetResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &HealthzHealthzGetResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseReadinessReadinessGetResponse parses an HTTP response from a ReadinessReadinessGetWithResponse call
-func ParseReadinessReadinessGetResponse(rsp *http.Response) (*ReadinessReadinessGetResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ReadinessReadinessGetResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest interface{}
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	}
-
-	return response, nil
-}
-
 // ParseBatchHashesV1HashesPostResponse parses an HTTP response from a BatchHashesV1HashesPostWithResponse call
 func ParseBatchHashesV1HashesPostResponse(rsp *http.Response) (*BatchHashesV1HashesPostResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -813,6 +619,13 @@ func ParseBatchHashesV1HashesPostResponse(rsp *http.Response) (*BatchHashesV1Has
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest HTTPExceptionDocumentationModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
@@ -847,6 +660,13 @@ func ParseGetSecretV1PrefixPrefixGetResponse(rsp *http.Response) (*GetSecretV1Pr
 		}
 		response.JSON422 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest HTTPExceptionDocumentationModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
+
 	}
 
 	return response, nil
@@ -879,6 +699,13 @@ func ParseBatchPrefixesV1PrefixesPostResponse(rsp *http.Response) (*BatchPrefixe
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 429:
+		var dest HTTPExceptionDocumentationModel
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON429 = &dest
 
 	}
 
