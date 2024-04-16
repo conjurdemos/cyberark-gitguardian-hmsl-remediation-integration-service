@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/davidh-cyberark/brimstone/pkg/brimstone"
-	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
+	"github.com/davidh-cyberark/brimstone/pkg/hailstone"
 	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
 	"github.com/davidh-cyberark/brimstone/pkg/utils"
 
@@ -51,43 +51,11 @@ func main() {
 
 	DEBUG = *debug
 
-	pamconfig := pam.NewConfig(cfg.IdTenantUrl, cfg.PcloudUrl, cfg.SafeName, cfg.PlatformID, cfg.PamUser, cfg.PamPass, cfg.TlsSkipVerify)
-	client := pam.NewClient(pamconfig.PCloudURL, pamconfig)
-	err := client.RefreshSessionToken()
+	pamConfig := pam.NewConfig(cfg.IdTenantUrl, cfg.PcloudUrl, cfg.SafeName, cfg.PlatformID, cfg.PamUser, cfg.PamPass, cfg.TlsSkipVerify)
+	pamClient := pam.NewClient(pamConfig.PCloudURL, pamConfig)
+	requests, err := hailstone.LoadAllAccounts(&pamClient)
 	if err != nil {
-		log.Fatalf("failed to fetch session token: %s", err.Error())
-	}
-
-	accounts, err := client.FetchAccounts()
-	if err != nil {
-		log.Fatalf("failed to fetch all safes: %s", err.Error())
-	}
-
-	requests := make(map[string]brimstone.HashBatch)
-	for a := range accounts {
-		p, e := client.FetchAccountPassword(accounts[a].ID)
-		if e != nil {
-			log.Printf("error fetching password for account id, %s: %s\n", accounts[a].ID, err.Error())
-		}
-
-		hmslhash, hhErr := hmsl.ComputeHash(p)
-		if hhErr != nil {
-			log.Printf("Error computing HMSL hash, skipping one: %s", err)
-			continue
-		}
-		newhash := brimstone.Hash{
-			Hash: hmslhash,
-			Name: accounts[a].ID,
-		}
-
-		req, ok := requests[accounts[a].SafeName]
-		if !ok {
-			req = brimstone.HashBatch{
-				Safename: accounts[a].SafeName,
-			}
-		}
-		req.Hashes = append(req.Hashes, newhash)
-		requests[accounts[a].SafeName] = req
+		log.Fatalf("failed to load all accounts: %s", err.Error())
 	}
 
 	// Send to brimstone

@@ -91,20 +91,13 @@ func sendBrimstoneError(ctx echo.Context, code int, message string) error {
 	return err
 }
 
-// HashesPut - PUT /v1/hashes
-func (b Brimstone) HashesPut(ctx echo.Context) error {
+func (b Brimstone) SaveHashBatch(hashbatch HashBatch) error {
 	db := b.Db
-
-	var hashbatch HashBatch
-	err := ctx.Bind(&hashbatch)
-	if err != nil {
-		return sendBrimstoneError(ctx, http.StatusBadRequest, "Invalid format for HashBatch")
-	}
 
 	var hashes []SafeHash
 	result := db.Limit(1).Where(&SafeHash{Safename: hashbatch.Safename}).Find(&hashes)
 	if result.RowsAffected != 0 {
-		return b.SaveExistingSafeHashes(ctx, hashbatch)
+		return b.SaveExistingSafeHashes(hashbatch)
 	}
 
 	// new safe with new hashes
@@ -122,8 +115,20 @@ func (b Brimstone) HashesPut(ctx echo.Context) error {
 	return result.Error
 }
 
+// HashesPut - PUT /v1/hashes
+func (b Brimstone) HashesPut(ctx echo.Context) error {
+
+	var hashbatch HashBatch
+	err := ctx.Bind(&hashbatch)
+	if err != nil {
+		return sendBrimstoneError(ctx, http.StatusBadRequest, "Invalid format for HashBatch")
+	}
+
+	return b.SaveHashBatch(hashbatch)
+}
+
 // SaveExistingSafeHashes - Safe already exists, save versions of hashes
-func (b Brimstone) SaveExistingSafeHashes(ctx echo.Context, batch HashBatch) error {
+func (b Brimstone) SaveExistingSafeHashes(batch HashBatch) error {
 	db := b.Db
 
 	// create a lookup dictionary from the name/hashes in the safe
@@ -453,7 +458,7 @@ func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
 	result := db.Limit(1).Where("safename = ? AND name = ?", event.Safename, event.Hashes[0].Name).Find(&hashes)
 	if result.RowsAffected != 0 {
 		log.Printf("saving next version of hash, safename: %s, account id: %s, hash: %s\n", event.Safename, event.Hashes[0].Name, event.Hashes[0].Hash)
-		return b.SaveExistingSafeHashes(ctx, event)
+		return b.SaveExistingSafeHashes(event)
 	}
 
 	// safe with new hash (CPM will only send 1 hash when an account password is reset)

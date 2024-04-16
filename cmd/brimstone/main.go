@@ -10,10 +10,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/davidh-cyberark/brimstone/pkg/brimstone"
 	bs "github.com/davidh-cyberark/brimstone/pkg/brimstone"
 	gg "github.com/davidh-cyberark/brimstone/pkg/gitguardian"
+	"github.com/davidh-cyberark/brimstone/pkg/hailstone"
 	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
 	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
 
@@ -32,8 +34,8 @@ const (
 )
 
 var (
-	version = "dev"
-	DEBUG   = false
+	version             = "dev"
+	LastRefreshAccounts = time.UnixMilli(0)
 )
 
 type config struct {
@@ -47,7 +49,38 @@ type config struct {
 	DbUrl string `env:"DB_URL,required,unset"`
 	Port  uint16 `env:"PORT" envDefault:"9191"`
 
+	RefreshAccountsEvery time.Duration `env:"REFRESH_ACCOUNTS_EVERY" envDefault:"1h"`
+
 	brimstone.BaseConfig
+}
+
+type CustomContext struct {
+	echo.Context
+	Config        config
+	ServerAddress string
+	Brimstone     bs.Brimstone
+}
+
+func RefreshAccountsRegularly(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		e := c.Echo()
+		cc := c.(*CustomContext)
+		e.Logger.Debugf("Last refresh of accounts: %s", time.Since(LastRefreshAccounts).String())
+		if cc.Config.RefreshAccountsEvery > 0 && time.Since(LastRefreshAccounts) > cc.Config.RefreshAccountsEvery {
+			e.Logger.Debug("Refreshing accounts")
+			LastRefreshAccounts = time.Now()
+			pamClient := pam.NewClient(cc.Brimstone.PAMConfig.PCloudURL, *cc.Brimstone.PAMConfig)
+			batches, err := hailstone.LoadAllAccounts(&pamClient)
+			if err != nil {
+				e.Logger.Error(err)
+			} else {
+				for _, batch := range batches {
+					cc.Brimstone.SaveHashBatch(batch)
+				}
+			}
+		}
+		return next(cc)
+	}
 }
 
 func main() {
@@ -61,7 +94,9 @@ func main() {
 	debug := flag.Bool("d", false, "Enable debug settings")
 	flag.Parse()
 
-	DEBUG = *debug
+	if debug != nil && *debug {
+		e.Debug = true
+	}
 
 	pamconfig := pam.Config{
 		IDTenantURL:     cfg.IdTenantUrl,
@@ -72,49 +107,6 @@ func main() {
 		Pass:            cfg.PamPass,
 		TLS_SKIP_VERIFY: cfg.TlsSkipVerify,
 	}
-
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			c.Set("config", cfg)
-			return next(c)
-		}
-	})
-
-	// Log all requests
-	e.Use(middleware.Logger())
-	if *ver {
-		e.Logger.Printf("Version: %s\n", version)
-		os.Exit(0)
-	}
-
-	// Configure GG authentication
-	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
-		KeyLookup:  "header:" + GG_HEADER,
-		AuthScheme: "",
-		Skipper: func(c echo.Context) bool {
-			// skip if we do not have a gg sig header
-			ggsig := c.Request().Header.Get(GG_HEADER)
-			return len(ggsig) == 0
-		},
-		Validator: func(key string, c echo.Context) (bool, error) {
-			return GGValidator(key, c)
-		},
-	}))
-
-	// Configure the api key authentication
-	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
-		KeyLookup:  "header:" + echo.HeaderAuthorization,
-		AuthScheme: "Bearer",
-		Skipper: func(c echo.Context) bool {
-			// skip if we have a gg sig header
-			ggsig := c.Request().Header.Get(GG_HEADER)
-			return len(ggsig) > 0
-		},
-		Validator: func(key string, c echo.Context) (bool, error) {
-			cfg := c.Get("config").(config)
-			return key == cfg.ApiKey, nil
-		},
-	}))
 
 	// Connect to the database
 	var db *gorm.DB
@@ -146,18 +138,63 @@ func main() {
 		PAMConfig:  &pamconfig,
 	}
 
+	server_addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(int(cfg.Port)))
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			cc := &CustomContext{c, cfg, server_addr, br}
+			return next(cc)
+		}
+	})
+
+	// Log all requests
+	e.Use(middleware.Logger())
+	if *ver {
+		e.Logger.Printf("Version: %s\n", version)
+		os.Exit(0)
+	}
+	e.Use(middleware.Recover())
+	e.Use(RefreshAccountsRegularly)
+
+	// Configure GG authentication
+	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
+		KeyLookup:  "header:" + GG_HEADER,
+		AuthScheme: "",
+		Skipper: func(c echo.Context) bool {
+			// skip if we do not have a gg sig header
+			ggsig := c.Request().Header.Get(GG_HEADER)
+			return len(ggsig) == 0
+		},
+		Validator: func(key string, c echo.Context) (bool, error) {
+			return GGValidator(key, c)
+		},
+	}))
+
+	// Configure the api key authentication
+	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
+		KeyLookup:  "header:" + echo.HeaderAuthorization,
+		AuthScheme: "Bearer",
+		Skipper: func(c echo.Context) bool {
+			// skip if we have a gg sig header
+			ggsig := c.Request().Header.Get(GG_HEADER)
+			return len(ggsig) > 0
+		},
+		Validator: func(key string, c echo.Context) (bool, error) {
+			cc := c.(*CustomContext)
+			return key == cc.Config.ApiKey, nil
+		},
+	}))
+
 	bs.RegisterHandlers(e, br)
 
 	if initdbErr := br.InitializeDb(); initdbErr != nil {
 		e.Logger.Fatalf("failed to initialize database: %s", initdbErr)
 	}
 
-	server_addr := net.JoinHostPort("0.0.0.0", strconv.Itoa(int(cfg.Port)))
 	e.Logger.Fatal(e.Start(server_addr))
 }
 
 func GGValidator(ggsig string, c echo.Context) (bool, error) {
-	cfg := c.Get("config").(config)
+	cc := c.(*CustomContext)
 	ggts := c.Request().Header.Get("timestamp")
 	if !strings.HasPrefix(ggsig, "sha256=") {
 		return false, fmt.Errorf("bad signature")
@@ -167,7 +204,7 @@ func GGValidator(ggsig string, c echo.Context) (bool, error) {
 	if bbErr != nil {
 		return false, fmt.Errorf("unable to read request body")
 	}
-	if ok := gg.ValidateGGPayload(ggsig, ggts, cfg.GgWebhookToken, bodyBytes); !ok {
+	if ok := gg.ValidateGGPayload(ggsig, ggts, cc.Config.GgWebhookToken, bodyBytes); !ok {
 		return false, fmt.Errorf("bad gg request")
 	}
 	return true, nil

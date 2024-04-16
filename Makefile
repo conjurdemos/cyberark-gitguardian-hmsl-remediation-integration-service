@@ -18,7 +18,7 @@ DATADIR := ./data
 include scripts/common.makefile
 export
 
-all: build-all-bins gen-brimstone-doc docs html  ## build all bins, openapi spec html, process DOCFILES
+all: build-all-bins gen-brimstone-doc docs html test  ## build all bins, openapi spec html, process DOCFILES
 
 GO := $(shell command -v go 2> /dev/null)
 LDFLAGS := -ldflags "-X main.version=$(VERSION)"
@@ -155,3 +155,10 @@ vardump::
 .PHONY: scripts/docs.makefile scripts/openapi.makefile
 include scripts/docs.makefile
 include scripts/openapi.makefile
+
+##
+## Run go unit tests
+##
+
+test:
+	$(GO) test -v ./...
