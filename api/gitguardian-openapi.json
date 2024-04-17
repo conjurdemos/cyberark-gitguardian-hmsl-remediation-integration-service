@@ -6,7 +6,7 @@
         }
     ],
     "info": {
-        "title": "GitGuardian API (WITH LOCAL FIXES)",
+        "title": "GitGuardian API",
         "version": "1.1.0",
         "termsOfService": "https://www.gitguardian.com/legal-terms",
         "license": {
@@ -242,10 +242,10 @@
                 ],
                 "operationId": "list-api-tokens",
                 "summary": "List API tokens.",
-                "description": "List all the tokens in the workspace, some filters are available and described \nbelow.\n",
+                "description": "List all the tokens in the workspace, some filters are available and described\nbelow.\n",
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "api_tokens:read"
                         ]
                     }
@@ -371,7 +371,7 @@
                 "summary": "Retrieve details of an API token.",
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "api_tokens:read"
                         ]
                     }
@@ -422,7 +422,7 @@
                 "summary": "Revoke an an API token.",
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "api_tokens:write"
                         ]
                     }
@@ -728,7 +728,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -782,7 +782,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -833,7 +833,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -865,7 +865,12 @@
                                         "properties": {
                                             "source": {
                                                 "type": "string",
-                                                "example": "github, github_issue, github_gist, unknown"
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/HMSLSourceTypeEnum"
+                                                    }
+                                                ],
+                                                "example": "github"
                                             },
                                             "name": {
                                                 "type": "string",
@@ -900,7 +905,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -969,7 +974,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1015,7 +1020,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1081,7 +1086,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1151,7 +1156,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1197,7 +1202,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1275,7 +1280,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:share"
                         ]
                     }
@@ -1314,7 +1319,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:share"
                         ]
                     }
@@ -1397,7 +1402,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:share"
                         ]
                     }
@@ -1471,7 +1476,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:share"
                         ]
                     }
@@ -1595,7 +1600,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -1667,7 +1672,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1760,7 +1765,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1823,7 +1828,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:write"
                         ]
                     }
@@ -1959,7 +1964,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read",
                             "members:read"
                         ]
@@ -2056,7 +2061,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read",
                             "teams:read"
                         ]
@@ -2154,7 +2159,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read",
                             "members:read"
                         ]
@@ -2209,12 +2214,10 @@
                             "type": "string",
                             "description": "Filter by integration type.",
                             "example": "github",
-                            "enum": [
-                                "bitbucket",
-                                "github",
-                                "gitlab",
-                                "azure_devops",
-                                "slack"
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/SourceTypeQueryParamsEnum"
+                                }
                             ]
                         }
                     },
@@ -2360,7 +2363,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -2451,7 +2454,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:read"
                         ]
                     }
@@ -2531,7 +2534,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:write"
                         ]
                     }
@@ -2587,7 +2590,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:write"
                         ]
                     }
@@ -2677,7 +2680,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:write"
                         ]
                     }
@@ -2790,7 +2793,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:read"
                         ]
                     }
@@ -2853,7 +2856,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:read"
                         ]
                     }
@@ -2907,7 +2910,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:write"
                         ]
                     }
@@ -2978,7 +2981,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:write"
                         ]
                     }
@@ -3041,7 +3044,7 @@
                 ],
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "scan"
                         ]
                     }
@@ -3186,7 +3189,7 @@
                 ],
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "scan"
                         ]
                     }
@@ -3291,7 +3294,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -3351,7 +3354,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -3454,7 +3457,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "scan"
                         ]
                     }
@@ -3534,7 +3537,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "scan"
                         ]
                     }
@@ -3598,12 +3601,10 @@
                             "type": "string",
                             "description": "Filter by integration type.",
                             "example": "github",
-                            "enum": [
-                                "bitbucket",
-                                "github",
-                                "gitlab",
-                                "azure_devops",
-                                "slack"
+                            "allOf": [
+                                {
+                                    "$ref": "#/components/schemas/SourceTypeQueryParamsEnum"
+                                }
                             ]
                         }
                     },
@@ -3640,6 +3641,22 @@
                             "type": "string",
                             "description": "Filter by specific external id.",
                             "example": "1"
+                        }
+                    },
+                    {
+                        "name": "source_criticality",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "critical",
+                                "high",
+                                "medium",
+                                "low",
+                                "unknown"
+                            ],
+                            "description": "Filter by source criticality.",
+                            "example": "critical"
                         }
                     }
                 ],
@@ -3697,7 +3714,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -3747,7 +3764,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read"
                         ]
                     }
@@ -3868,7 +3885,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "audit_logs:read"
                         ]
                     }
@@ -4014,7 +4031,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:read"
                         ]
                     }
@@ -4084,7 +4101,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -4147,7 +4164,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:read"
                         ]
                     }
@@ -4201,7 +4218,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -4252,7 +4269,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -4454,7 +4471,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "incidents:read",
                             "teams:read"
                         ]
@@ -4555,7 +4572,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:read",
                             "teams:read"
                         ]
@@ -4669,7 +4686,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:read"
                         ]
                     }
@@ -4746,7 +4763,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -4842,7 +4859,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -4895,7 +4912,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5009,7 +5026,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:read"
                         ]
                     }
@@ -5076,7 +5093,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5172,7 +5189,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5225,7 +5242,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5310,7 +5327,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:read"
                         ]
                     }
@@ -5396,7 +5413,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:read"
                         ]
                     }
@@ -5453,7 +5470,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5508,7 +5525,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5604,7 +5621,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -5690,7 +5707,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "members:read",
                             "teams:read"
                         ]
@@ -5851,7 +5868,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:read"
                         ]
                     }
@@ -5924,7 +5941,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "teams:write"
                         ]
                     }
@@ -6094,7 +6111,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:read"
                         ]
                     }
@@ -6186,7 +6203,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6258,7 +6275,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:read"
                         ]
                     }
@@ -6329,7 +6346,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6372,7 +6389,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6415,7 +6432,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6531,7 +6548,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:read"
                         ]
                     }
@@ -6600,7 +6617,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6692,7 +6709,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6757,7 +6774,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -6843,7 +6860,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:read"
                         ]
                     }
@@ -6966,7 +6983,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:read"
                         ]
                     }
@@ -7055,7 +7072,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:read"
                         ]
                     }
@@ -7124,7 +7141,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -7185,7 +7202,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -7235,7 +7252,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -7306,7 +7323,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -7364,7 +7381,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "honeytokens:write"
                         ]
                     }
@@ -7420,7 +7437,7 @@
                 },
                 "security": [
                     {
-                        "APIKey": [
+                        "api-key": [
                             "scan"
                         ]
                     }
@@ -8791,6 +8808,27 @@
                         "description": "Number of closed secret incidents with at least one occurrence on this source.\n",
                         "example": 2
                     },
+                    "secret_incidents_breakdown": {
+                        "type": "object",
+                        "description": "Detailed count of secret incidents linked to this source.",
+                        "readOnly": true,
+                        "properties": {
+                            "open_secret_incidents": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/sourceSeverityBreakdown"
+                                    }
+                                ]
+                            },
+                            "closed_secret_incidents": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/sourceSeverityBreakdown"
+                                    }
+                                ]
+                            }
+                        }
+                    },
                     "visibility": {
                         "type": "string",
                         "readOnly": true,
@@ -8802,6 +8840,12 @@
                         "description": "VCS identifier of the source (e.g.: the GitHub id for a GitHub repository). Warning: external_id is a string because some VCS ids can be UUIDs.\n",
                         "example": "125"
                     },
+                    "source_criticality": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "Criticality of the source.\n",
+                        "example": "critical"
+                    },
                     "last_scan": {
                         "allOf": [
                             {
@@ -8809,6 +8853,37 @@
                             }
                         ],
                         "readOnly": true
+                    }
+                }
+            },
+            "sourceSeverityBreakdown": {
+                "type": "object",
+                "properties": {
+                    "total": {
+                        "type": "integer"
+                    },
+                    "severity_breakdown": {
+                        "type": "object",
+                        "properties": {
+                            "critical": {
+                                "type": "integer"
+                            },
+                            "high": {
+                                "type": "integer"
+                            },
+                            "medium": {
+                                "type": "integer"
+                            },
+                            "low": {
+                                "type": "integer"
+                            },
+                            "info": {
+                                "type": "integer"
+                            },
+                            "unknown": {
+                                "type": "integer"
+                            }
+                        }
                     }
                 }
             },
@@ -9395,6 +9470,10 @@
                         "title": "Scan Type",
                         "type": "string"
                     },
+                    "source_found": {
+                        "title": "Source Found",
+                        "type": "boolean"
+                    },
                     "entities_with_incidents": {
                         "title": "Entities With Incidents",
                         "$ref": "#/components/schemas/entitiesWithIncidents"
@@ -9416,6 +9495,10 @@
                     "type": {
                         "title": "Scan Type",
                         "type": "string"
+                    },
+                    "source_found": {
+                        "title": "Source Found",
+                        "type": "boolean"
                     },
                     "entities_with_incidents": {
                         "title": "Categorized Vulnerabilities",
@@ -9504,8 +9587,14 @@
                                         "type": "string",
                                         "description": "The URL of the incident on your GitGuardian dashboard, if it is a known vulnerability."
                                     },
+                                    "url": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "description": "The url linking to the incident on your GitGuardian dashboard."
+                                    },
                                     "status": {
                                         "type": "string",
+                                        "nullable": true,
                                         "description": "The status of the incident on your GitGuardian dashboard, if it is a known vulnerability.",
                                         "$ref": "#/components/schemas/IACStatusEnum"
                                     },
@@ -9824,7 +9913,9 @@
                 "enum": [
                     "DEFAULT_BRANCH",
                     "FROM_HISTORICAL_SCAN",
-                    "IGNORED_IN_CHECK_RUN",
+                    "CHECK_RUN_SKIP_FALSE_POSITIVE",
+                    "CHECK_RUN_SKIP_LOW_RISK",
+                    "CHECK_RUN_SKIP_TEST_CRED",
                     "PUBLIC",
                     "PUBLICLY_EXPOSED",
                     "PUBLICLY_LEAKED",
@@ -9838,7 +9929,9 @@
                 "enum": [
                     "DEFAULT_BRANCH",
                     "FROM_HISTORICAL_SCAN",
-                    "IGNORED_IN_CHECK_RUN",
+                    "CHECK_RUN_SKIP_FALSE_POSITIVE",
+                    "CHECK_RUN_SKIP_LOW_RISK",
+                    "CHECK_RUN_SKIP_TEST_CRED",
                     "PUBLIC",
                     "PUBLICLY_EXPOSED",
                     "PUBLICLY_LEAKED",
@@ -9876,6 +9969,27 @@
             "HoneyTokenEventTag": {
                 "enum": [
                     "publicly_exposed"
+                ],
+                "type": "string"
+            },
+            "SourceTypeQueryParamsEnum": {
+                "enum": [
+                    "bitbucket",
+                    "github",
+                    "gitlab",
+                    "azure_devops",
+                    "slack",
+                    "jira_cloud",
+                    "confluence_cloud"
+                ],
+                "type": "string"
+            },
+            "HMSLSourceTypeEnum": {
+                "enum": [
+                    "github",
+                    "github_issue",
+                    "github_gist",
+                    "unknown"
                 ],
                 "type": "string"
             }
@@ -10166,17 +10280,17 @@
             }
         },
         "securitySchemes": {
-            "APIKey": {
-                "description": "Usage: `Token <API Key>` in `Authorization` header.\n",
+            "api-key": {
+                "description": "Usage: `Token <api-key>` in `Authorization` header.\n\nScopes:\n- `scan`: Secrets detection capability\n- `incidents:read`: Read incidents\n- `incidents:write`: Read and write incidents\n- `incidents:share`: Share, read and write incidents\n- `members:read`: Read members\n- `members:write`: Read and write members\n- `teams:read`: Read teams\n- `teams:write`: Read and write teams\n- `audit_logs:read`: Read audit logs\n- `honeytokens:read`: Read honeytokens\n- `honeytokens:write`: Read and write honeytokens\n- `api_tokens:read`: Read API tokens\n- `api_tokens:write`: Read and write API tokens\n",
                 "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "Token <API Key>"
+                "scheme": "Bearer",
+                "bearerFormat": "Token <api-key>"
             }
         }
     },
     "security": [
         {
-            "APIKey": []
+            "api-key": []
         }
     ]
 }

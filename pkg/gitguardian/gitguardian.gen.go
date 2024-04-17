@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	APIKeyScopes = "APIKey.Scopes"
+	Api_keyScopes = "api_key.Scopes"
 )
 
 // Defines values for APITokenScopeEnum.
@@ -72,6 +72,14 @@ const (
 	Custom   DetectorGroupTypeEnum = "custom"
 	Generic  DetectorGroupTypeEnum = "generic"
 	Specific DetectorGroupTypeEnum = "specific"
+)
+
+// Defines values for HMSLSourceTypeEnum.
+const (
+	HMSLSourceTypeEnumGithub      HMSLSourceTypeEnum = "github"
+	HMSLSourceTypeEnumGithubGist  HMSLSourceTypeEnum = "github_gist"
+	HMSLSourceTypeEnumGithubIssue HMSLSourceTypeEnum = "github_issue"
+	HMSLSourceTypeEnumUnknown     HMSLSourceTypeEnum = "unknown"
 )
 
 // Defines values for HoneyTokenEventTag.
@@ -163,6 +171,17 @@ const (
 	SourceHealthEnumUnknown SourceHealthEnum = "unknown"
 )
 
+// Defines values for SourceTypeQueryParamsEnum.
+const (
+	SourceTypeQueryParamsEnumAzureDevops     SourceTypeQueryParamsEnum = "azure_devops"
+	SourceTypeQueryParamsEnumBitbucket       SourceTypeQueryParamsEnum = "bitbucket"
+	SourceTypeQueryParamsEnumConfluenceCloud SourceTypeQueryParamsEnum = "confluence_cloud"
+	SourceTypeQueryParamsEnumGithub          SourceTypeQueryParamsEnum = "github"
+	SourceTypeQueryParamsEnumGitlab          SourceTypeQueryParamsEnum = "gitlab"
+	SourceTypeQueryParamsEnumJiraCloud       SourceTypeQueryParamsEnum = "jira_cloud"
+	SourceTypeQueryParamsEnumSlack           SourceTypeQueryParamsEnum = "slack"
+)
+
 // Defines values for StatusEnum.
 const (
 	StatusEnumASSIGNED  StatusEnum = "ASSIGNED"
@@ -173,15 +192,17 @@ const (
 
 // Defines values for TagEnum.
 const (
-	DEFAULTBRANCH      TagEnum = "DEFAULT_BRANCH"
-	FROMHISTORICALSCAN TagEnum = "FROM_HISTORICAL_SCAN"
-	IGNOREDINCHECKRUN  TagEnum = "IGNORED_IN_CHECK_RUN"
-	PUBLIC             TagEnum = "PUBLIC"
-	PUBLICLYEXPOSED    TagEnum = "PUBLICLY_EXPOSED"
-	PUBLICLYLEAKED     TagEnum = "PUBLICLY_LEAKED"
-	REGRESSION         TagEnum = "REGRESSION"
-	SENSITIVEFILE      TagEnum = "SENSITIVE_FILE"
-	TESTFILE           TagEnum = "TEST_FILE"
+	CHECKRUNSKIPFALSEPOSITIVE TagEnum = "CHECK_RUN_SKIP_FALSE_POSITIVE"
+	CHECKRUNSKIPLOWRISK       TagEnum = "CHECK_RUN_SKIP_LOW_RISK"
+	CHECKRUNSKIPTESTCRED      TagEnum = "CHECK_RUN_SKIP_TEST_CRED"
+	DEFAULTBRANCH             TagEnum = "DEFAULT_BRANCH"
+	FROMHISTORICALSCAN        TagEnum = "FROM_HISTORICAL_SCAN"
+	PUBLIC                    TagEnum = "PUBLIC"
+	PUBLICLYEXPOSED           TagEnum = "PUBLICLY_EXPOSED"
+	PUBLICLYLEAKED            TagEnum = "PUBLICLY_LEAKED"
+	REGRESSION                TagEnum = "REGRESSION"
+	SENSITIVEFILE             TagEnum = "SENSITIVE_FILE"
+	TESTFILE                  TagEnum = "TEST_FILE"
 )
 
 // Defines values for TeamPermissionEnum.
@@ -334,15 +355,6 @@ const (
 	MinusLastLogin ListMembersParamsOrdering = "-last_login"
 )
 
-// Defines values for ListOccsParamsSourceType.
-const (
-	ListOccsParamsSourceTypeAzureDevops ListOccsParamsSourceType = "azure_devops"
-	ListOccsParamsSourceTypeBitbucket   ListOccsParamsSourceType = "bitbucket"
-	ListOccsParamsSourceTypeGithub      ListOccsParamsSourceType = "github"
-	ListOccsParamsSourceTypeGitlab      ListOccsParamsSourceType = "gitlab"
-	ListOccsParamsSourceTypeSlack       ListOccsParamsSourceType = "slack"
-)
-
 // Defines values for ListOccsParamsOrdering.
 const (
 	ListOccsParamsOrderingDate      ListOccsParamsOrdering = "date"
@@ -353,15 +365,6 @@ const (
 const (
 	MinusName ListSecretDetectorsParamsOrdering = "-name"
 	Name      ListSecretDetectorsParamsOrdering = "name"
-)
-
-// Defines values for ListSourcesParamsType.
-const (
-	ListSourcesParamsTypeAzureDevops ListSourcesParamsType = "azure_devops"
-	ListSourcesParamsTypeBitbucket   ListSourcesParamsType = "bitbucket"
-	ListSourcesParamsTypeGithub      ListSourcesParamsType = "github"
-	ListSourcesParamsTypeGitlab      ListSourcesParamsType = "gitlab"
-	ListSourcesParamsTypeSlack       ListSourcesParamsType = "slack"
 )
 
 // Defines values for ListSourcesParamsOrdering.
@@ -377,6 +380,15 @@ const (
 	ListSourcesParamsVisibilityPublic   ListSourcesParamsVisibility = "public"
 )
 
+// Defines values for ListSourcesParamsSourceCriticality.
+const (
+	ListSourcesParamsSourceCriticalityCritical ListSourcesParamsSourceCriticality = "critical"
+	ListSourcesParamsSourceCriticalityHigh     ListSourcesParamsSourceCriticality = "high"
+	ListSourcesParamsSourceCriticalityLow      ListSourcesParamsSourceCriticality = "low"
+	ListSourcesParamsSourceCriticalityMedium   ListSourcesParamsSourceCriticality = "medium"
+	ListSourcesParamsSourceCriticalityUnknown  ListSourcesParamsSourceCriticality = "unknown"
+)
+
 // Defines values for ListTeamIncidentsParamsOrdering.
 const (
 	ListTeamIncidentsParamsOrderingDate            ListTeamIncidentsParamsOrdering = "date"
@@ -389,10 +401,10 @@ const (
 
 // Defines values for ListTeamSourcesParamsType.
 const (
-	ListTeamSourcesParamsTypeAzureDevops ListTeamSourcesParamsType = "azure_devops"
-	ListTeamSourcesParamsTypeBitbucket   ListTeamSourcesParamsType = "bitbucket"
-	ListTeamSourcesParamsTypeGithub      ListTeamSourcesParamsType = "github"
-	ListTeamSourcesParamsTypeGitlab      ListTeamSourcesParamsType = "gitlab"
+	AzureDevops ListTeamSourcesParamsType = "azure_devops"
+	Bitbucket   ListTeamSourcesParamsType = "bitbucket"
+	Github      ListTeamSourcesParamsType = "github"
+	Gitlab      ListTeamSourcesParamsType = "gitlab"
 )
 
 // Defines values for ListTeamSourcesParamsOrdering.
@@ -435,6 +447,9 @@ type ExposedVulnerabilityOutputSchema struct {
 	Severity     string     `json:"severity"`
 	Summary      string     `json:"summary"`
 }
+
+// HMSLSourceTypeEnum defines model for HMSLSourceTypeEnum.
+type HMSLSourceTypeEnum string
 
 // HoneyTokenEventTag defines model for HoneyTokenEventTag.
 type HoneyTokenEventTag string
@@ -504,6 +519,9 @@ type SeverityEnumIAC string
 
 // SourceHealthEnum defines model for SourceHealthEnum.
 type SourceHealthEnum string
+
+// SourceTypeQueryParamsEnum defines model for SourceTypeQueryParamsEnum.
+type SourceTypeQueryParamsEnum string
 
 // StatusEnum defines model for StatusEnum.
 type StatusEnum string
@@ -698,6 +716,9 @@ type EntitiesWithIncidents = []struct {
 		// Severity Severity of the vulnerability
 		Severity *string        `json:"severity,omitempty"`
 		Status   *IACStatusEnum `json:"status,omitempty"`
+
+		// Url The url linking to the incident on your GitGuardian dashboard.
+		Url *string `json:"url"`
 	} `json:"incidents"`
 }
 
@@ -848,6 +869,7 @@ type IacDiffScanResult struct {
 	} `json:"entities_with_incidents,omitempty"`
 	IacEngineVersion *string `json:"iac_engine_version,omitempty"`
 	Id               *string `json:"id,omitempty"`
+	SourceFound      *bool   `json:"source_found,omitempty"`
 	Type             *string `json:"type,omitempty"`
 }
 
@@ -857,6 +879,7 @@ type IacScanResult struct {
 	EntitiesWithIncidents *EntitiesWithIncidents `json:"entities_with_incidents,omitempty"`
 	IacEngineVersion      *string                `json:"iac_engine_version,omitempty"`
 	Id                    *string                `json:"id,omitempty"`
+	SourceFound           *bool                  `json:"source_found,omitempty"`
 	Type                  *string                `json:"type,omitempty"`
 }
 
@@ -1153,10 +1176,32 @@ type Source struct {
 	LastScan   *Scan             `json:"last_scan,omitempty"`
 
 	// OpenIncidentsCount Number of open secret incidents with at least one occurrence on this source.
-	OpenIncidentsCount *int    `json:"open_incidents_count,omitempty"`
-	Type               *string `json:"type,omitempty"`
-	Url                *string `json:"url,omitempty"`
-	Visibility         *string `json:"visibility,omitempty"`
+	OpenIncidentsCount *int `json:"open_incidents_count,omitempty"`
+
+	// SecretIncidentsBreakdown Detailed count of secret incidents linked to this source.
+	SecretIncidentsBreakdown *struct {
+		ClosedSecretIncidents *SourceSeverityBreakdown `json:"closed_secret_incidents,omitempty"`
+		OpenSecretIncidents   *SourceSeverityBreakdown `json:"open_secret_incidents,omitempty"`
+	} `json:"secret_incidents_breakdown,omitempty"`
+
+	// SourceCriticality Criticality of the source.
+	SourceCriticality *string `json:"source_criticality,omitempty"`
+	Type              *string `json:"type,omitempty"`
+	Url               *string `json:"url,omitempty"`
+	Visibility        *string `json:"visibility,omitempty"`
+}
+
+// SourceSeverityBreakdown defines model for sourceSeverityBreakdown.
+type SourceSeverityBreakdown struct {
+	SeverityBreakdown *struct {
+		Critical *int `json:"critical,omitempty"`
+		High     *int `json:"high,omitempty"`
+		Info     *int `json:"info,omitempty"`
+		Low      *int `json:"low,omitempty"`
+		Medium   *int `json:"medium,omitempty"`
+		Unknown  *int `json:"unknown,omitempty"`
+	} `json:"severity_breakdown,omitempty"`
+	Total *int `json:"total,omitempty"`
 }
 
 // Team defines model for team.
@@ -1810,9 +1855,9 @@ type ListOccsParams struct {
 	DateAfter  *DateAfter  `form:"date_after,omitempty" json:"date_after,omitempty"`
 
 	// SourceId Filter on the source ID.
-	SourceId   *int                      `form:"source_id,omitempty" json:"source_id,omitempty"`
-	SourceName *string                   `form:"source_name,omitempty" json:"source_name,omitempty"`
-	SourceType *ListOccsParamsSourceType `form:"source_type,omitempty" json:"source_type,omitempty"`
+	SourceId   *int                       `form:"source_id,omitempty" json:"source_id,omitempty"`
+	SourceName *string                    `form:"source_name,omitempty" json:"source_name,omitempty"`
+	SourceType *SourceTypeQueryParamsEnum `form:"source_type,omitempty" json:"source_type,omitempty"`
 
 	// IncidentId Filter by incident ID.
 	IncidentId *int           `form:"incident_id,omitempty" json:"incident_id,omitempty"`
@@ -1827,9 +1872,6 @@ type ListOccsParams struct {
 	// field is preceded by a '-'.
 	Ordering *ListOccsParamsOrdering `form:"ordering,omitempty" json:"ordering,omitempty"`
 }
-
-// ListOccsParamsSourceType defines parameters for ListOccs.
-type ListOccsParamsSourceType string
 
 // ListOccsParamsOrdering defines parameters for ListOccs.
 type ListOccsParamsOrdering string
@@ -1881,27 +1923,28 @@ type ListSourcesParams struct {
 	Page *Page `form:"page,omitempty" json:"page,omitempty"`
 
 	// PerPage Number of items to list per page.
-	PerPage        *PerPage               `form:"per_page,omitempty" json:"per_page,omitempty"`
-	Search         *string                `form:"search,omitempty" json:"search,omitempty"`
-	LastScanStatus *ScanStatusEnum        `form:"last_scan_status,omitempty" json:"last_scan_status,omitempty"`
-	Health         *SourceHealthEnum      `form:"health,omitempty" json:"health,omitempty"`
-	Type           *ListSourcesParamsType `form:"type,omitempty" json:"type,omitempty"`
+	PerPage        *PerPage                   `form:"per_page,omitempty" json:"per_page,omitempty"`
+	Search         *string                    `form:"search,omitempty" json:"search,omitempty"`
+	LastScanStatus *ScanStatusEnum            `form:"last_scan_status,omitempty" json:"last_scan_status,omitempty"`
+	Health         *SourceHealthEnum          `form:"health,omitempty" json:"health,omitempty"`
+	Type           *SourceTypeQueryParamsEnum `form:"type,omitempty" json:"type,omitempty"`
 
 	// Ordering Sort the results by their field value. The default sort is ASC, DESC if the
 	// field is preceded by a '-'.
-	Ordering   *ListSourcesParamsOrdering   `form:"ordering,omitempty" json:"ordering,omitempty"`
-	Visibility *ListSourcesParamsVisibility `form:"visibility,omitempty" json:"visibility,omitempty"`
-	ExternalId *string                      `form:"external_id,omitempty" json:"external_id,omitempty"`
+	Ordering          *ListSourcesParamsOrdering          `form:"ordering,omitempty" json:"ordering,omitempty"`
+	Visibility        *ListSourcesParamsVisibility        `form:"visibility,omitempty" json:"visibility,omitempty"`
+	ExternalId        *string                             `form:"external_id,omitempty" json:"external_id,omitempty"`
+	SourceCriticality *ListSourcesParamsSourceCriticality `form:"source_criticality,omitempty" json:"source_criticality,omitempty"`
 }
-
-// ListSourcesParamsType defines parameters for ListSources.
-type ListSourcesParamsType string
 
 // ListSourcesParamsOrdering defines parameters for ListSources.
 type ListSourcesParamsOrdering string
 
 // ListSourcesParamsVisibility defines parameters for ListSources.
 type ListSourcesParamsVisibility string
+
+// ListSourcesParamsSourceCriticality defines parameters for ListSources.
+type ListSourcesParamsSourceCriticality string
 
 // ListTeamsParams defines parameters for ListTeams.
 type ListTeamsParams struct {
@@ -8942,6 +8985,22 @@ func NewListSourcesRequest(server string, params *ListSourcesParams) (*http.Requ
 
 		}
 
+		if params.SourceCriticality != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "source_criticality", runtime.ParamLocationQuery, *params.SourceCriticality); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -11773,9 +11832,9 @@ type RetrieveIncidentsLeaksResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]struct {
-		Name   *string `json:"name,omitempty"`
-		Source *string `json:"source,omitempty"`
-		Url    *string `json:"url,omitempty"`
+		Name   *string             `json:"name,omitempty"`
+		Source *HMSLSourceTypeEnum `json:"source,omitempty"`
+		Url    *string             `json:"url,omitempty"`
 	}
 	JSON401 *UnauthorizedError
 	JSON404 *Error
@@ -15978,9 +16037,9 @@ func ParseRetrieveIncidentsLeaksResponse(rsp *http.Response) (*RetrieveIncidents
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []struct {
-			Name   *string `json:"name,omitempty"`
-			Source *string `json:"source,omitempty"`
-			Url    *string `json:"url,omitempty"`
+			Name   *string             `json:"name,omitempty"`
+			Source *HMSLSourceTypeEnum `json:"source,omitempty"`
+			Url    *string             `json:"url,omitempty"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
