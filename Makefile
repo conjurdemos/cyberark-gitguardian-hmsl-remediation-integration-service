@@ -5,10 +5,10 @@
 # LICENSE
 
 BINDIR := ./bin
-STATICDIR := ./static/
+STATICDIR := ./static
 
-DOCFILES := README.md README-design.md CONTRIBUTING.md  README-pcloud.md
-DOCFILE_HTML_TARGETS := $(foreach var,$(DOCFILES),$(STATICDIR)$(var).html) gen-brimstone-doc
+DOCFILES := $(wildcard *.md)
+DOCFILE_HTML_TARGETS := $(addprefix $(STATICDIR)/, $(addsuffix .html, $(basename $(DOCFILES)))) gen-brimstone-doc
 
 BRIMSTONE_OPENAPI_SPEC := api/brimstone.yaml
 
@@ -28,11 +28,11 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 ## Documentation targets
 ##
 .PHONY: gen-brimstone-doc
-gen-brimstone-doc: static/brimstone-spec/index.html   ## generate brimstone HTML doc from brimstone openapi spec
+gen-brimstone-doc: $(STATICDIR)/brimstone-spec/index.html   ## generate brimstone HTML doc from brimstone openapi spec
 
-static/brimstone-spec/index.html: api/brimstone.yaml | redocly-cli
-	@mkdir -p static/brimstone-spec
-	$(REDOCLY_CLI) build-docs ./api/brimstone.yaml -o static/brimstone-spec/index.html
+$(STATICDIR)/brimstone-spec/index.html: api/brimstone.yaml | redocly-cli
+	@mkdir -p $(STATICDIR)/brimstone-spec
+	$(REDOCLY_CLI) build-docs ./api/brimstone.yaml -o $(STATICDIR)/brimstone-spec/index.html
 
 ##
 ## OPENAPI code gen
@@ -142,7 +142,7 @@ clean::
 	rm -f $(BINDIR)/pam-client
 	rm -f $(BINDIR)/cp-client
 	rm -f $(BINDIR)/randchar
-	rm -f static/brimstone-spec/index.html
+	rm -f $(STATICDIR)/brimstone-spec/index.html
 
 vardump::
 	@echo "Makefile: BINDIR: $(BINDIR)"

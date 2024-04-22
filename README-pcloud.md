@@ -7,14 +7,6 @@ Updated:  <2024-02-21 16:38:42 david.hisel>
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-* [Brimstone Privilege Cloud Notes](#brimstone-privilege-cloud-notes)
-  * [Add Safe](#add-safe)
-  * [Create Brimstone Service User](#create-brimstone-service-user)
-  * [Associate Service User To Safe](#associate-service-user-to-safe)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 * [Brimstone Privilege Cloud Notes](#brimstone-privilege-cloud-notes)
   * [Add Safe](#add-safe)
@@ -24,7 +16,6 @@ Updated:  <2024-02-21 16:38:42 david.hisel>
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Brimstone Privilege Cloud Notes
-
 
 ## Add Safe
 

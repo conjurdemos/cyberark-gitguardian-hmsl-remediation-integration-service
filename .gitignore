@@ -29,9 +29,11 @@ build/*
 bin/*
 cockroach-data
 
-Archive/*
-tests/Archive/*
+# ignore all archive and tmp sub-dirs
+**/Archive/
+**/tmp/
 static/*
+*.md.sha256sum
 
 node_modules/*
 package-lock.json
