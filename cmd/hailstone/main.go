@@ -31,7 +31,7 @@ type config struct {
 	BrimstoneUrl    string `env:"BRIMSTONE_URL" envDefault:"http://127.0.0.1:9191"`
 	BrimstoneApiKey string `env:"BRIMSTONE_API_KEY,unset"`
 
-	utils.BaseConfig
+	brimstone.BaseConfig
 }
 
 func main() {

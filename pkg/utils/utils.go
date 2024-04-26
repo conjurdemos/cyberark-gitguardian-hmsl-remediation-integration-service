@@ -7,17 +7,6 @@ import (
 	"time"
 )
 
-type BaseConfig struct {
-	IdTenantUrl string `env:"ID_TENANT_URL,required"`
-	PcloudUrl   string `env:"PCLOUD_URL,required"`
-	SafeName    string `env:"SAFE_NAME,required"`
-	PlatformID  string `env:"PLATFORM_ID,required"`
-	PamUser     string `env:"PAM_USER,required"`
-	PamPass     string `env:"PAM_PASS,required,unset"`
-
-	TlsSkipVerify bool `env:"TLS_SKIP_VERIFY" envDefault:"false"`
-}
-
 // GetHTTPClient create http client for HTTPS
 func GetHTTPClient(timeout time.Duration, skipverify bool) *http.Client {
 	client := &http.Client{
