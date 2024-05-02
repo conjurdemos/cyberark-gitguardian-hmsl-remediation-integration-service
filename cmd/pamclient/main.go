@@ -26,6 +26,7 @@ func main() {
 
 	tlsskipverify := flag.Bool("tls-skip-verify", false, "Skip TLS Verify when calling pam (for self-signed cert)")
 
+	listAccountsFlag := flag.Bool("l", false, "List Accounts and exit")
 	debug := flag.Bool("d", false, "Enable debug settings")
 	ver := flag.Bool("version", false, "Print version")
 	flag.Parse()
@@ -37,6 +38,7 @@ func main() {
 
 	TLS_SKIP_VERIFY = *tlsskipverify
 	DEBUG = *debug
+	listAccounts := *listAccountsFlag
 
 	pamconfig := pam.NewConfig(*idtenanturl, *pcloudurl, *safename, "DummyPlatform", *pamuser, *pampass, TLS_SKIP_VERIFY)
 	client := pam.NewClient(pamconfig.PCloudURL, pamconfig)
@@ -53,6 +55,12 @@ func main() {
 		if allaccounts[i].SafeName == *safename {
 			accounts = append(accounts, allaccounts[i])
 		}
+		if listAccounts {
+			log.Printf("ACCT: %+v\n", allaccounts[i])
+		}
+	}
+	if listAccounts {
+		os.Exit(0)
 	}
 
 	accountid := "1010_1"

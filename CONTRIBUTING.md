@@ -2,22 +2,22 @@
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
-- [Contributing to the Brimstone Repo](#contributing-to-the-brimstone-repo)
-  - [Table of Contents](#table-of-contents)
-  - [Where Do I Start?](#where-do-i-start)
-  - [Contribution Workflow](#contribution-workflow)
-    - [Reporting an Issue](#reporting-an-issue)
-    - [Finding Issues to Work On](#finding-issues-to-work-on)
-    - [Reviewing license requirements](#reviewing-license-requirements)
-      - [When the Repo Includes the CLA](#when-the-repo-includes-the-cla)
-      - [When the Repo Does Not Include the CLA](#when-the-repo-does-not-include-the-cla)
-        - [Signing Off a Commit](#signing-off-a-commit)
-        - [Verifying That You Have Signed a Commit](#verifying-that-you-have-signed-a-commit)
-    - [Working on Issues](#working-on-issues)
-    - [Submitting a Pull Request](#submitting-a-pull-request)
-    - [Getting Your Code Reviewed](#getting-your-code-reviewed)
-  - [Contributing to this project](#contributing-to-this-project)
-  - [Tips For Making a Project Open to Contributions](#tips-for-making-a-project-open-to-contributions)
+* [Contributing to the Brimstone Repo](#contributing-to-the-brimstone-repo)
+  * [Table of Contents](#table-of-contents)
+  * [Where Do I Start?](#where-do-i-start)
+  * [Contribution Workflow](#contribution-workflow)
+    * [Reporting an Issue](#reporting-an-issue)
+    * [Finding Issues to Work On](#finding-issues-to-work-on)
+    * [Reviewing license requirements](#reviewing-license-requirements)
+      * [When the Repo Includes the CLA](#when-the-repo-includes-the-cla)
+      * [When the Repo Does Not Include the CLA](#when-the-repo-does-not-include-the-cla)
+        * [Signing Off a Commit](#signing-off-a-commit)
+        * [Verifying That You Have Signed a Commit](#verifying-that-you-have-signed-a-commit)
+    * [Working on Issues](#working-on-issues)
+    * [Submitting a Pull Request](#submitting-a-pull-request)
+    * [Getting Your Code Reviewed](#getting-your-code-reviewed)
+  * [Contributing to this project](#contributing-to-this-project)
+  * [Tips For Making a Project Open to Contributions](#tips-for-making-a-project-open-to-contributions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 

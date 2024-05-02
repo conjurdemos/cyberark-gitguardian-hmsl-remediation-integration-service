@@ -1,14 +1,14 @@
 # Makefile -*- Makefile -*-
 
-# Updated: <2024-01-16 15:24:57 david.hisel>
+# Updated: <2024/03/19 15:52:05>
 
 # LICENSE
 
 BINDIR := ./bin
-STATICDIR := ./static/
+STATICDIR := ./static
 
-DOCFILES := README.md README-design.md CONTRIBUTING.md  README-pcloud.md
-DOCFILE_HTML_TARGETS := $(foreach var,$(DOCFILES),$(STATICDIR)$(var).html) gen-brimstone-doc
+DOCFILES := $(wildcard *.md)
+DOCFILE_HTML_TARGETS := $(addprefix $(STATICDIR)/, $(addsuffix .html, $(basename $(DOCFILES)))) gen-brimstone-doc
 
 BRIMSTONE_OPENAPI_SPEC := api/brimstone.yaml
 
@@ -28,11 +28,11 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 ## Documentation targets
 ##
 .PHONY: gen-brimstone-doc
-gen-brimstone-doc: static/brimstone-spec/index.html   ## generate brimstone HTML doc from brimstone openapi spec
+gen-brimstone-doc: $(STATICDIR)/brimstone-spec/index.html   ## generate brimstone HTML doc from brimstone openapi spec
 
-static/brimstone-spec/index.html: api/brimstone.yaml | redocly-cli
-	@mkdir -p static/brimstone-spec
-	$(REDOCLY_CLI) build-docs ./api/brimstone.yaml -o static/brimstone-spec/index.html
+$(STATICDIR)/brimstone-spec/index.html: api/brimstone.yaml | redocly-cli
+	@mkdir -p $(STATICDIR)/brimstone-spec
+	$(REDOCLY_CLI) build-docs ./api/brimstone.yaml -o $(STATICDIR)/brimstone-spec/index.html
 
 ##
 ## OPENAPI code gen
@@ -73,6 +73,12 @@ build-brimstone: $(BINDIR)/brimstone  ## build the brimstone server BINDIR/brims
 $(BINDIR)/brimstone: VERSION pkg/brimstone/brimstone.go pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/client.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go $(BRIMSTONE_OPENAPI_SPEC)
 	$(GO) build -o $(BINDIR)/brimstone $(LDFLAGS) cmd/brimstone/main.go
 
+.PHONY: build-brimstone-cp
+build-brimstone-cp: $(BINDIR)/brimstone-cp  ## build the brimstone server BINDIR/brimstone-cp
+
+$(BINDIR)/brimstone-cp: VERSION pkg/brimstone/brimstone.go pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/client.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go $(BRIMSTONE_OPENAPI_SPEC)
+	$(GO) build -o $(BINDIR)/brimstone-cp $(LDFLAGS) cmd/brimstone-cp/main.go
+
 .PHONY: build-hailstone
 build-hailstone: $(BINDIR)/hailstone  ## build the hailstone loader BINDIR/hailstone
 
@@ -97,8 +103,14 @@ build-pam-client: $(BINDIR)/pam-client ## build the gg client BINDIR/gg-client
 $(BINDIR)/pam-client: VERSION cmd/pamclient/main.go pkg/privilegeaccessmanager/privilegeaccessmanager.go pkg/utils/utils.go
 	$(GO) build -o $(BINDIR)/pam-client $(LDFLAGS) cmd/pamclient/main.go
 
+.PHONY: build-cp-client
+build-cp-client: $(BINDIR)/cp-client ## build the gg client BINDIR/gg-client
+
+$(BINDIR)/cp-client: VERSION cmd/cpclient/main.go
+	$(GO) build -o $(BINDIR)/cp-client $(LDFLAGS) cmd/cpclient/main.go
+
 .PHONY: build-all-bins
-build-all-bins: build-brimstone build-hailstone build-hmsl-client build-gg-client build-pam-client build-randchar
+build-all-bins: build-brimstone build-hailstone build-brimstone-cp build-hmsl-client build-gg-client build-pam-client build-randchar build-cp-client
 
 ##
 ## Helpers
@@ -123,12 +135,14 @@ $(BINDIR)/randchar: VERSION cmd/randchar/main.go
 clean::
 	rm -f pkg/brimstone/brimstone.gen.go pkg/hasmysecretleaked/hasmysecretleaked.gen.go
 	rm -f $(BINDIR)/brimstone
+	rm -f $(BINDIR)/brimstone-cp
 	rm -f $(BINDIR)/hailstone
 	rm -f $(BINDIR)/hmsl-client
 	rm -f $(BINDIR)/gg-client
 	rm -f $(BINDIR)/pam-client
+	rm -f $(BINDIR)/cp-client
 	rm -f $(BINDIR)/randchar
-	rm -f static/brimstone-spec/index.html
+	rm -f $(STATICDIR)/brimstone-spec/index.html
 
 vardump::
 	@echo "Makefile: BINDIR: $(BINDIR)"

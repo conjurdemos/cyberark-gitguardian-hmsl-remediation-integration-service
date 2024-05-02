@@ -393,7 +393,7 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 		newsafehashes = append(newsafehashes, newhash)
 		result := db.CreateInBatches(newsafehashes, 1)
 		if result != nil && result.Error != nil {
-			log.Printf("unable to save new account hmsl hash (%s, %s, %s): %s", newhash.Safename, newhash.Name, newhash.Hash, result.Error.Error())
+			log.Printf("unable to save new account hmsl hash (%s, %s, %s): %s\n", newhash.Safename, newhash.Name, newhash.Hash, result.Error.Error())
 		}
 
 		msg := fmt.Sprintf("New account created, %s, for %s", newaccount.ID, *event.Incident.GitguardianUrl)
@@ -401,12 +401,10 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 	}
 }
 
-// CyberArkPAMCPMEventPut receive CPM plugin request
+// CyberArkPAMCPMEventPut receive CPM plugin request; CPM updated the password, this request is telling brimstone to update its database
 func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
 	db := b.Db
 	pamconfig := b.PAMConfig
-
-	// CPM will usually send account name (not account id)
 
 	var event HashBatch
 	err := ctx.Bind(&event)
@@ -415,9 +413,10 @@ func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
 	}
 
 	if event.Safename == "" || len(event.Hashes) == 0 {
-		return fmt.Errorf("No hashes passed in")
+		return fmt.Errorf("no hashes passed in")
 	}
 
+	// CPM will usually send account name (not account id), so, we attempt to determine accountid by querying PAM
 	client := pam.NewClient(pamconfig.PCloudURL, *pamconfig)
 	err = client.RefreshSessionToken()
 	if err != nil {
@@ -428,36 +427,34 @@ func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
 	// Loookup acount id based on account name
 	accountid, rescode, errFetchId := client.FetchAccountIdFromAccountName(event.Safename, event.Hashes[0].Name)
 	if rescode == 404 {
-		return sendBrimstoneError(ctx, http.StatusNotFound, fmt.Sprintf("error safename not matched to account id: %s", event.Safename))
+		log.Printf("unable to determine accountid, safename: %s, account name: %s\n", event.Safename, event.Hashes[0].Name)
+		return sendBrimstoneError(ctx, http.StatusNotFound, fmt.Sprintf("unable to determine accountid, safename: %s, account name: %s", event.Safename, event.Hashes[0].Name))
 	}
 	if rescode > 299 && errFetchId != nil {
+		log.Printf("error with result code, %d: %s\n", rescode, errFetchId.Error())
 		return sendBrimstoneError(ctx, rescode, fmt.Sprintf("error with result code, %d: %s", rescode, errFetchId.Error()))
 	}
-
-	hashbatch := HashBatch{
-		Safename: event.Safename,
-		Hashes: []Hash{
-			{Name: accountid, Hash: event.Hashes[0].Hash},
-		},
-	}
+	// Adjust the event obj to use account id instead of name
+	event.Hashes[0].Name = accountid
+	log.Printf("CPM Event found Account ID: %s\n", accountid)
 
 	var hashes []SafeHash
-	result := db.Limit(1).Where(&SafeHash{Safename: hashbatch.Safename}).Find(&hashes)
+	result := db.Limit(1).Where("safename = ? AND name = ?", event.Safename, event.Hashes[0].Name).Find(&hashes)
 	if result.RowsAffected != 0 {
-		return b.SaveExistingSafeHashes(ctx, hashbatch)
+		log.Printf("saving next version of hash, safename: %s, account id: %s, hash: %s\n", event.Safename, event.Hashes[0].Name, event.Hashes[0].Hash)
+		return b.SaveExistingSafeHashes(ctx, event)
 	}
 
-	// new safe with new hashe(s)
+	// safe with new hash (CPM will only send 1 hash when an account password is reset)
 	var newsafehashes []SafeHash
-	for i := 0; i < len(hashbatch.Hashes); i++ {
-		newhash := SafeHash{
-			Safename: hashbatch.Safename,
-			Name:     hashbatch.Hashes[i].Name,
-			Hash:     hashbatch.Hashes[i].Hash,
-		}
-		newsafehashes = append(newsafehashes, newhash)
+	newhash := SafeHash{
+		Safename: event.Safename,
+		Name:     event.Hashes[0].Name,
+		Hash:     event.Hashes[0].Hash,
 	}
-	result = db.CreateInBatches(newsafehashes, 100)
+	newsafehashes = append(newsafehashes, newhash)
+	log.Printf("saving new version of hash, safename: %s, account id: %s, hash: %s\n", event.Safename, event.Hashes[0].Name, event.Hashes[0].Hash)
+	result = db.CreateInBatches(newsafehashes, 10)
 
 	return result.Error
 }
