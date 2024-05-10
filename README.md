@@ -33,16 +33,16 @@ Updated:  <2023-12-28 13:45:25 david.hisel>
 
 ## Summary
 
-Brimstone is a service that complements the [GitGuardian](https://www.gitguardian.com/) (GG) service [HasMySecretLeaked]( https://www.gitguardian.com/hasmysecretleaked) (HMSL).  It takes in and stores the HMSL hashes to facilitate remediation actions such as rotating a password if one is found to be leaked.
+Brimstone is a service that complements the [GitGuardian](https://www.gitguardian.com/) (GG) service [HasMySecretLeaked](https://www.gitguardian.com/hasmysecretleaked) (HMSL). It takes in and stores the HMSL hashes to facilitate remediation actions such as rotating a password if one is found to be leaked.
 
 ## Use Cases
 
-| # | Trigger |  Data Source | Findings | Action | Use Case |
-| - | - | - | - | - | - |
-| 1 | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | No Matches | Do Nothing | If hash prefixes from Brimstone sent to HMSL return no matches, then this indicates no leaks of the PAM Accounts being tracked in Brimstone. |
-| 2 | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | Matches Returned | For each "Matches" item, if it exists in Brimstone, then _Change Account Password_ | If hash prefixes from Brimstone sent to HMSL return matches, then this indicates that the PAM Account secret is leaked. |
-| 3 | GG Incident | GG Custom Webhook Incident | No Matches In Brimstone | _Add Account_ in Pending Safe | GG tracks our own repos, so, if we find a secret in our codebase, immediately provision it. |
-| 4 | GG Incident | GG Custom Webhook Incident | Matches In Brimstone | _Change Account Password_ | GG tracks our own repos, so, if we find a secret in our codebase, and it matches an account in the PAM Vault rotate it. |
+| #   | Trigger                | Data Source                               | Findings                | Action                                                                             | Use Case                                                                                                                                     |
+| --- | ---------------------- | ----------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | No Matches              | Do Nothing                                                                         | If hash prefixes from Brimstone sent to HMSL return no matches, then this indicates no leaks of the PAM Accounts being tracked in Brimstone. |
+| 2   | Brimstone POST to HMSL | HMSL POST /v1/{prefixes,hashes} responses | Matches Returned        | For each "Matches" item, if it exists in Brimstone, then _Change Account Password_ | If hash prefixes from Brimstone sent to HMSL return matches, then this indicates that the PAM Account secret is leaked.                      |
+| 3   | GG Incident            | GG Custom Webhook Incident                | No Matches In Brimstone | _Add Account_ in Pending Safe                                                      | GG tracks our own repos, so, if we find a secret in our codebase, immediately provision it.                                                  |
+| 4   | GG Incident            | GG Custom Webhook Incident                | Matches In Brimstone    | _Change Account Password_                                                          | GG tracks our own repos, so, if we find a secret in our codebase, and it matches an account in the PAM Vault rotate it.                      |
 
 <!--
 ```plantuml
@@ -71,7 +71,7 @@ Brimstone -> PAM: Create account in "Pending" safe\nPOST /PasswordVault/API/Acco
 
 ![Scenario 2 Diagram](images/remediation-gg-incident-use-cases.svg)
 
-<!-- 
+<!--
 ```plantuml
 @startuml images/remediation-hmsl-leaked-use-cases.svg
 title Remediation HMSL Use Case
@@ -96,7 +96,7 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 ### Notable: Remediate Non-tracked Exposed Credential - Add Account
 
-* When GitGuardian sends an incident to Brimstone, and there is no corresponding hmsl_hash, Brimstone will add an account to a pending safe.  When looking in the pending safe, and
+* When GitGuardian sends an incident to Brimstone, and there is no corresponding hmsl_hash, Brimstone will add an account to a pending safe. When looking in the pending safe, and
   * "Address" will contain the GitGuardian incident url
   * "Platform ID" will be "DummyPlatform"
   * "Username" and Account "Name" will be derived from the GG incident URL
@@ -109,7 +109,7 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
   ```text
   Authorization: Bearer [[api key]]
-  
+
   Example:
   Authorization: Bearer abcdef123456
   ```
@@ -157,36 +157,47 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 ### Brimstone Service
 
-| Parameter          | Example Value                                                                            | Required | Notes                                                                                                                           |
-|--------------------|------------------------------------------------------------------------------------------|----------|---------------------------------------------------------------------------------------------------------------------------------|
-| -keyvar            | `BRIMSTONE_API_KEY`                                                                      | N        | default env var name is `BRIMSTONE_API_KEY`                                                                                     |
-| -hmslurl           | `https://api.hasmysecretleaked.com`                                                      | N        | HMSL url where to send hashes (Used as audience when sending JWT request), default value is `https://api.hasmysecretleaked.com` |
-| -hmslaudtype       | `hmsl`                                                                                   | N        | Audience type for HMSL JWT request, default value is `hmsl`                                                                     |
-| -ggapiurl          | `https://api.gitguardian.com`                                                            | N        | GG API URL, default is `https://api.gitguardian.com`                                                                            |
-| -ggapitokenvar     | `GG_API_TOKEN_VARNAME`                                                                   | Y        | GG API token can be retrieved from GG Dashboard -> API -> Personal access tokens (default env var name: `GG_API_TOKEN`)         |
-| -ggwebhooktokenvar | `GG_WEBHOOK_TOKEN_VARNAME`                                                               | Y        | GG API Token env var contains GG API token to use (default env var name: `GG_WEBHOOK_TOKEN`)                                    |
-| -dburl             | `postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone` | N        | Database URL, default value is `postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone`         |
-| -port              | `9191`                                                                                   | N        | Port whereon Brimstone listens, default: 9191                                                                                   |
-| -idtenanturl       | `https://EXAMPLE.id.cyberark.cloud`                                                      | Y        | PAM config ID tenant URL                                                                                                        |
-| -pcloudurl         | `https://EXAMPLE.privilegecloud.cyberark.cloud`                                          | Y        | PAM config Privilege Cloud URL                                                                                                  |
-| -pamuser           | pam user                                                                                 | Y        | PAM config PAM User                                                                                                             |
-| -pampass           | pam user password                                                                  | Y        | PAM config PAM Pass                                                                                                             |
-| -safename          | `Pending`                                                                                | Y        | PAM config PAM Pending Safe Name.  Note: safe must already exist and pamuser can add and change accounts.                       |
-| -version           |                                                                                          | N        | Print version and exit                                                                                                          |
-| -d                 |                                                                                          | N        | Set output level to debug                                                                                                       |
+| Type                 | Name               | Example Value                                                                            | Required | Notes                                                                                                                                                     |
+| -------------------- | ------------------ | ---------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Environment variable | BRIMSTONE_API_KEY  | `BRIMSTONE_API_KEY`                                                                      | N        | default env var name is `BRIMSTONE_API_KEY`                                                                                                               |
+| Environment variable | HMSL_URL           | `https://api.hasmysecretleaked.com`                                                      | N        | HMSL url where to send hashes (Used as audience when sending JWT request), default value is `https://api.hasmysecretleaked.com`                           |
+| Environment variable | HMSL_AUDIENCE_TYPE | `hmsl`                                                                                   | N        | Audience type for HMSL JWT request, default value is `hmsl`                                                                                               |
+| Environment variable | GG_API_URL         | `https://api.gitguardian.com`                                                            | N        | GG API URL, default is `https://api.gitguardian.com`                                                                                                      |
+| Environment variable | GG_API_TOKEN       | `GG_API_TOKEN_VARNAME`                                                                   | Y        | GG API token can be retrieved from GG Dashboard -> API -> Personal access tokens (default env var name: `GG_API_TOKEN`)                                   |
+| Environment variable | GG_WEBHOOK_TOKEN   | `GG_WEBHOOK_TOKEN_VARNAME`                                                               | Y        | GG API Token env var contains GG API token to use (default env var name: `GG_WEBHOOK_TOKEN`)                                                              |
+| Environment variable | DB_URL             | `postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone` | N        | Database URL, supports `postgres://` adn `sqlite://`, default is `postgresql://root@localhost:26257/brimstone?sslmode=disable&application_name=brimstone` |
+| Environment variable | PORT               | `9191`                                                                                   | N        | Port whereon Brimstone listens, default: 9191                                                                                                             |
+| Environment variable | ID_TENANT_URL      | `https://EXAMPLE.id.cyberark.cloud`                                                      | Y        | PAM config ID tenant URL                                                                                                                                  |
+| Environment variable | PCLOUD_URL         | `https://EXAMPLE.privilegecloud.cyberark.cloud`                                          | Y        | PAM config Privilege Cloud URL                                                                                                                            |
+| Environment variable | PAM_USER           | pam user                                                                                 | Y        | PAM config PAM User                                                                                                                                       |
+| Environment variable | PAM_PASS           | pam user password                                                                        | Y        | PAM config PAM Pass                                                                                                                                       |
+| Environment variable | SAFE_NAME          | `Pending`                                                                                | Y        | PAM config PAM Pending Safe Name. Note: safe must already exist and pamuser can add and change accounts.                                                  |
+| Environment variable | PLATFORM_ID        | `UnixSSH`                                                                                | Y        | Platform used when creating accounts                                                                                                                      |
+| Parameter            | -version           |                                                                                          | N        | Print version and exit                                                                                                                                    |
+| Parameter            | -d                 |                                                                                          | N        | Set output level to debug                                                                                                                                 |
 
 ### Hailstone App
 
-| Parameter        | Example Value                                 | Required | Notes                                                                 |
-|------------------|-----------------------------------------------|----------|-----------------------------------------------------------------------|
-| -d               |                                               | N        | enable debug mode                                                     |
-| -idtenanturl     | `https://EXAMPLE.id.cyberark.cloud`             | Y        | ID Tenant                                                             |
-| -pcloudurl       | `https://EXAMPLE.privilegecloud.cyberark.cloud` | Y        | Privilege Cloud (or PAM self-hosted)                                  |
-| -pamuser         | `pamuser@example.com`                           | Y        | PAM user - must have perms to add account and change account password |
-| -pampass         | `mypassword`                                    | Y        | PAM user creds                                                        |
-| -safename        | `pendingsafe`                                   | Y        | Safe name for Pending safe where new accounts will be added           |
-| -brimstoneurl    | `http://brimstone.example.com:9191/v1/hashes`   | Y        | URL where to post hashes                                              |
-| -brimstoneapikey | `abc123`                                        | Y        | API key to authn to Brimstone service                                 |
+| Type                 | Name              | Example Value                                   | Required | Notes                                                                                                    |
+| -------------------- | ----------------- | ----------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| Parameter            | -d                |                                                 | N        | enable debug mode                                                                                        |
+| Environment variable | ID_TENANT_URL     | `https://EXAMPLE.id.cyberark.cloud`             | Y        | PAM config ID tenant URL                                                                                 |
+| Environment variable | PCLOUD_URL        | `https://EXAMPLE.privilegecloud.cyberark.cloud` | Y        | PAM config Privilege Cloud URL                                                                           |
+| Environment variable | PAM_USER          | pam user                                        | Y        | PAM config PAM User                                                                                      |
+| Environment variable | PAM_PASS          | pam user password                               | Y        | PAM config PAM Pass                                                                                      |
+| Environment variable | SAFE_NAME         | `Pending`                                       | Y        | PAM config PAM Pending Safe Name. Note: safe must already exist and pamuser can add and change accounts. |
+| Environment variable | BRIMSTONE_URL     | `http://brimstone.example.com:9191`             | Y        | URL where to post hashes                                                                                 |
+| Environment variable | BRIMSTONE_API_KEY | `BRIMSTONE_API_KEY`                             | N        | default env var name is `BRIMSTONE_API_KEY`                                                              |
+
+### Using an .env file
+
+* Copy `.env.example` to `.env` and fill the values
+* Start Brimstone or Hailstone using the `.env` file
+```bash
+(env $(cat .env | sed 's/#.*//g' | xargs) bin/brimstone)
+# or
+(env $(cat .env | sed 's/#.*//g' | xargs) bin/hailstone)
+```
 
 ## Walk Through
 
@@ -237,23 +248,23 @@ Brimstone -> PAM: Call Change Password Immediately\nPOST /PasswordVault/API/Acco
 
 ## Colophon
 
-Brimstone - archaic term for sulfur -> sulfur is the stuff "matches" are made from.  Brimstone, the app, curates the stuff "matches" are made from.  E.g., the hashes are matched with other hashes.
+Brimstone - archaic term for sulfur -> sulfur is the stuff "matches" are made from. Brimstone, the app, curates the stuff "matches" are made from. E.g., the hashes are matched with other hashes.
 
 ## License
 
-  Copyright (c) 2024 CyberArk Software Ltd. All rights reserved.
+Copyright (c) 2024 CyberArk Software Ltd. All rights reserved.
 
-  Licensed under the Apache License, Version 2.0 (the "License");
-  you may not use this file except in compliance with the License.
-  You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-  <http://www.apache.org/licenses/LICENSE-2.0>
+<http://www.apache.org/licenses/LICENSE-2.0>
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 For the full license text see [`LICENSE`](LICENSE).
 

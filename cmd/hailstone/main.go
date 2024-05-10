@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -17,26 +18,27 @@ import (
 	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
 	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
 	"github.com/davidh-cyberark/brimstone/pkg/utils"
+
+	"github.com/caarlos0/env/v10"
 )
 
 var (
-	version         = "dev"
-	TLS_SKIP_VERIFY = false
-
-	DEBUG = false
+	version = "dev"
+	DEBUG   = false
 )
 
+type config struct {
+	BrimstoneUrl    string `env:"BRIMSTONE_URL" envDefault:"http://127.0.0.1:9191"`
+	BrimstoneApiKey string `env:"BRIMSTONE_API_KEY,unset"`
+
+	brimstone.BaseConfig
+}
+
 func main() {
-	idtenanturl := flag.String("idtenanturl", "", "PAM config ID tenant URL")
-	pcloudurl := flag.String("pcloudurl", "", "PAM config Privilege Cloud URL")
-	pamuser := flag.String("pamuser", "", "PAM config PAM User")
-	pampass := flag.String("pampass", "", "PAM config PAM Pass")
-	safename := flag.String("safename", "", "PAM config PAM Safe Name")
-
-	brimstoneurl := flag.String("brimstoneurl", "http://127.0.0.1:9191/v1/hashes", "Brimstone api url")
-	brimstoneapikey := flag.String("brimstoneapikey", "", "Brimstone api key")
-
-	tlsskipverify := flag.Bool("tls-skip-verify", false, "Skip TLS Verify when calling pam (for self-signed cert)")
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("failed to parse config: %+v\n", err)
+	}
 
 	debug := flag.Bool("d", false, "Enable debug settings")
 	ver := flag.Bool("version", false, "Print version")
@@ -47,10 +49,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	TLS_SKIP_VERIFY = *tlsskipverify
 	DEBUG = *debug
 
-	pamconfig := pam.NewConfig(*idtenanturl, *pcloudurl, *safename, "DummyPlatform", *pamuser, *pampass, TLS_SKIP_VERIFY)
+	pamconfig := pam.NewConfig(cfg.IdTenantUrl, cfg.PcloudUrl, cfg.SafeName, cfg.PlatformID, cfg.PamUser, cfg.PamPass, cfg.TlsSkipVerify)
 	client := pam.NewClient(pamconfig.PCloudURL, pamconfig)
 	err := client.RefreshSessionToken()
 	if err != nil {
@@ -91,27 +92,28 @@ func main() {
 
 	// Send to brimstone
 	for k := range requests {
-		err = SendKeysToBrimstone(requests[k], *brimstoneurl, *brimstoneapikey)
+		err = SendKeysToBrimstone(requests[k], cfg)
 		if err != nil {
 			log.Printf("Unable to send keys to brimstone: %s\n", err.Error())
 		}
 	}
 }
 
-func SendKeysToBrimstone(keys brimstone.HashBatch, brimstoneurl string, brimstoneapikey string) error {
-	client := utils.GetHTTPClient(time.Second*30, TLS_SKIP_VERIFY)
+func SendKeysToBrimstone(keys brimstone.HashBatch, cfg config) error {
+	client := utils.GetHTTPClient(time.Second*30, cfg.TlsSkipVerify)
 
 	content, err := json.Marshal(keys)
 	if err != nil {
 		return fmt.Errorf("failed to serialize keys: %s", err.Error())
 	}
 
-	req, err := http.NewRequest(http.MethodPut, brimstoneurl, bytes.NewReader(content))
+	brimstoneEndpoint := fmt.Sprintf("%s/v1/hashes", cfg.BrimstoneUrl)
+	req, err := http.NewRequest(http.MethodPut, brimstoneEndpoint, bytes.NewReader(content))
 	if err != nil {
 		log.Fatalf("error in request to get platform token: %s", err.Error())
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", brimstoneapikey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cfg.BrimstoneApiKey))
 	req.Header.Add("Content-Type", "application/json")
 
 	response, err := client.Do(req)
@@ -119,8 +121,14 @@ func SendKeysToBrimstone(keys brimstone.HashBatch, brimstoneurl string, brimston
 		return err
 	}
 
+	body, e := io.ReadAll(response.Body)
+	if e != nil {
+		return fmt.Errorf("failed to read response body: %s", err.Error())
+	}
+	defer response.Body.Close()
+
 	if response.StatusCode >= 300 {
-		return fmt.Errorf("failed to send to brimstone: (%d) %s", response.StatusCode, response.Status)
+		return fmt.Errorf("failed to send to brimstone: (%s) %s", response.Status, body)
 	}
 	return nil
 }

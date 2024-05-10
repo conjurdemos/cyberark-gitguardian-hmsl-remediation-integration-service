@@ -26,6 +26,17 @@ import (
 // current, then current-1 and current-2, so, 3 total
 const MAX_HASH_COUNT = 3
 
+type BaseConfig struct {
+	IdTenantUrl string `env:"ID_TENANT_URL,required"`
+	PcloudUrl   string `env:"PCLOUD_URL,required"`
+	SafeName    string `env:"SAFE_NAME,required"`
+	PlatformID  string `env:"PLATFORM_ID,required"`
+	PamUser     string `env:"PAM_USER,required"`
+	PamPass     string `env:"PAM_PASS,required,unset"`
+
+	TlsSkipVerify bool `env:"TLS_SKIP_VERIFY" envDefault:"false"`
+}
+
 type Brimstone struct {
 	Db         *gorm.DB
 	HMSLClient *hmsl.ClientWithResponses
@@ -379,7 +390,7 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 			PlatformAccountProperties: pam.PlatformAccountProperties{},
 		}
 		newaccount, code, err := client.AddAccount(addreq)
-		if err != nil {
+		if err != nil || newaccount.ID == "" {
 			return sendBrimstoneError(ctx, code, "Unable to add PAM account from GG incident")
 		}
 
