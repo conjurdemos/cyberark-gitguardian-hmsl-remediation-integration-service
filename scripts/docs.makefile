@@ -30,12 +30,12 @@ endif
 
 DOCFILE_OBJS = $(addsuffix .sha256sum,$(DOCFILES))
 
-%.md.sha256sum : %.md
+%.md.sha256sum : %.md | dot-installed doctoc $(PLANTUML_JAR)
 	java -jar $(PLANTUML_JAR) -tsvg $<
 	npm exec -- doctoc $(DOCTOC_ARGS) $<
 	sha256sum $< > $@
 
-docs: $(DOCFILE_OBJS) | dot-installed doctoc $(PLANTUML_JAR) ## process DOCFILES files using plantuml (requires graphviz)
+docs: $(DOCFILE_OBJS)  ## process DOCFILES files using plantuml (requires graphviz)
 
 .PHONY: npm-installed dot-installed docs
 
@@ -47,7 +47,7 @@ $(PLANTUML_JAR): | $(BINDIR)
 
 
 # <https://github.com/thlorenz/doctoc>
-doctoc: npm-installed
+doctoc: | npm-installed
 	npm list doctoc >/dev/null || npm install doctoc
 
 # <https://www.npmjs.com/package/markdown-it>
