@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
-	"github.com/davidh-cyberark/brimstone/pkg/utils"
+	hmsl "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/hasmysecretleaked"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/utils"
 )
 
 var (
