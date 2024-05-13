@@ -16,7 +16,7 @@
 	    "detector_group_display_name": "Generic High Entropy Secret"
 	},
 	"secret_hash": "xxx",
-	"hmsl_hash": "$HMSLHASH",
+	"hmsl_hash": $HMSLHASH,
 	"secret_revoked": false,
 	"occurrence_count": 1,
 	"status": "triggered",

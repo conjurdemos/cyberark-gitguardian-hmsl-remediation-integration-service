@@ -14,10 +14,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/davidh-cyberark/brimstone/pkg/brimstone"
-	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
-	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
-	"github.com/davidh-cyberark/brimstone/pkg/utils"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/brimstone"
+	hmsl "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/hasmysecretleaked"
+	pam "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/privilegeaccessmanager"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/utils"
 
 	"github.com/caarlos0/env/v10"
 )
@@ -123,7 +123,7 @@ func SendKeysToBrimstone(keys brimstone.HashBatch, cfg config) error {
 
 	body, e := io.ReadAll(response.Body)
 	if e != nil {
-		return fmt.Errorf("failed to read response body: %s", err.Error())
+		return fmt.Errorf("failed to read response body: %s", e.Error())
 	}
 	defer response.Body.Close()
 

@@ -12,6 +12,7 @@
   * [Configuration](#configuration)
     * [Brimstone Service](#brimstone-service)
     * [Hailstone App](#hailstone-app)
+    * [Using an .env file](#using-an-env-file)
   * [Walk Through](#walk-through)
     * [Setup](#setup)
     * [GG Incident Flow](#gg-incident-flow)

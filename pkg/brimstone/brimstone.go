@@ -14,11 +14,11 @@ import (
 	"gorm.io/gorm"
 
 	//"gorm.io/driver/sqlite"
-	gg "github.com/davidh-cyberark/brimstone/pkg/gitguardian"
-	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
-	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
+	gg "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/gitguardian"
+	hmsl "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/hasmysecretleaked"
+	pam "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/privilegeaccessmanager"
 
-	"github.com/davidh-cyberark/brimstone/pkg/utils"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/utils"
 	"github.com/labstack/echo/v4"
 	//"github.com/labstack/echo/v4/middleware"
 )

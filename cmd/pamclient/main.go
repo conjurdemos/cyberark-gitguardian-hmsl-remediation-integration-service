@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
-	"github.com/davidh-cyberark/brimstone/pkg/utils"
+	pam "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/privilegeaccessmanager"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/utils"
 )
 
 var (

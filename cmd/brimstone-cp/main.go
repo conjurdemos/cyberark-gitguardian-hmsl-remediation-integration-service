@@ -11,11 +11,11 @@ import (
 	"os"
 	"strings"
 
-	bs "github.com/davidh-cyberark/brimstone/pkg/brimstone"
-	cp "github.com/davidh-cyberark/brimstone/pkg/credentialprovider"
-	gg "github.com/davidh-cyberark/brimstone/pkg/gitguardian"
-	hmsl "github.com/davidh-cyberark/brimstone/pkg/hasmysecretleaked"
-	pam "github.com/davidh-cyberark/brimstone/pkg/privilegeaccessmanager"
+	bs "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/brimstone"
+	cp "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/credentialprovider"
+	gg "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/gitguardian"
+	hmsl "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/hasmysecretleaked"
+	pam "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/privilegeaccessmanager"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

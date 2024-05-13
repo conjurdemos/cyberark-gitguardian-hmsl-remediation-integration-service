@@ -1,4 +1,4 @@
-module github.com/davidh-cyberark/brimstone
+module github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone
 
 go 1.21.3
 

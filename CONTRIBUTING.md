@@ -249,7 +249,7 @@ Once your pull-request has been submitted for review, a reviewer will look for a
 We want to provide our community with the best possible experience when they choose to contribute to
 one of our projects. That means constant improvements to this project and the documentation therein.
 
-Looking through [issues for this project](https://github.com/davidh-cyberark/brimstone/issues) is a great
+Looking through [issues for this project](https://github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/issues) is a great
 way to see what we're doing to improve the community experience, and to see what we're planning for
 the future.
 

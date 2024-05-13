@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	gg "github.com/davidh-cyberark/brimstone/pkg/gitguardian"
+	gg "github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/gitguardian"
 )
 
 var (

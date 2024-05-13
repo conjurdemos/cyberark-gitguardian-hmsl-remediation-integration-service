@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davidh-cyberark/brimstone/pkg/utils"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/utils"
 )
 
 type Config struct {

@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/davidh-cyberark/brimstone/pkg/credentialprovider"
+	"github.com/conjurdemos/cyberark-gitguardian-hmsl-remediation-integration-service/brimstone/pkg/credentialprovider"
 )
 
 var (
