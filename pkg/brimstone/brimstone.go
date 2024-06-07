@@ -71,6 +71,15 @@ type ErrorMessagesResponse struct {
 	Errors []Error `json:"errors"`
 }
 
+// Information about the status of an account after receiving a GG event
+type AccountMetadata struct {
+	Name     string `json:"name"`
+	Present  bool   `json:"present"`
+	Rotated  bool   `json:"rotated"`
+	Added    bool   `json:"added"`
+	SafeName string `json:"safe_name"`
+}
+
 // InitializeDb calls auto-migrate to create tables, if needed
 func (b Brimstone) InitializeDb() error {
 	errAutoMigrate := b.Db.AutoMigrate(&SafeHash{})
@@ -337,7 +346,7 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 		return sendBrimstoneError(ctx, http.StatusNotFound, "HMSL hash not sent as a parameter")
 	}
 
-	accountids, err := b.FindAccountID(*event.Incident.HmslHash)
+	accounts, err := b.FindAccounts(*event.Incident.HmslHash)
 	if err != nil {
 		log.Printf("Error finding hmsl hash: %s\n", err.Error())
 		return sendBrimstoneError(ctx, http.StatusNotFound, "No matching hmsl hash")
@@ -349,27 +358,22 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 	}
 
 	// Found a matching HMSL Hash, so, let's tell PAM to change the password
-	if len(accountids) > 0 {
-		var resp ErrorMessagesResponse
-		for i := 0; i < len(accountids); i++ {
-			log.Printf("Account ID: %s\n", accountids[i])
-			code, err := client.ChangePasswordImmediately(accountids[i])
+	var accountsMetadata []AccountMetadata
+	if len(accounts) > 0 {
+		for i := 0; i < len(accounts); i++ {
+			var accountMetadata AccountMetadata
+			accountMetadata.Present = true
+			log.Printf("Account ID: %s\n", accounts[i].Name)
+			accountMetadata.Name = accounts[i].Name
+			accountMetadata.SafeName = accounts[i].Safename
+			_, err := client.ChangePasswordImmediately(accounts[i].Name)
 			if err != nil {
-				newmsg := fmt.Sprintf("ERROR: failed to change password for acct id, %s: %s\n", accountids[i], err.Error())
-				brimstoneErr := Error{
-					Code:    int32(code),
-					Message: newmsg,
-				}
-				resp.Errors = append(resp.Errors, brimstoneErr)
+				log.Printf("ERROR: failed to change password for acct id, %s: %s\n", accounts[i].Name, err.Error())
+			} else {
+				accountMetadata.Rotated = true
 			}
+			accountsMetadata = append(accountsMetadata, accountMetadata)
 		}
-		code := http.StatusOK
-		if len(resp.Errors) > 0 {
-			code = http.StatusConflict
-		}
-		return ctx.JSON(code, resp)
-		// return sendBrimstoneError(ctx, http.StatusConflict, "Unable to change PAM account password")
-
 	} else {
 		// NO matching HMSL Hash, so, let's add a new account to PAM
 		acctname := "gitguardian"
@@ -393,6 +397,9 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 		if err != nil || newaccount.ID == "" {
 			return sendBrimstoneError(ctx, code, "Unable to add PAM account from GG incident")
 		}
+		var accountMetadata AccountMetadata
+		accountMetadata.Name = newaccount.ID
+		accountMetadata.SafeName = newaccount.SafeName
 
 		db := b.Db
 		var newsafehashes []SafeHash
@@ -405,11 +412,14 @@ func (b Brimstone) GitGuardianEventPost(ctx echo.Context) error {
 		result := db.CreateInBatches(newsafehashes, 1)
 		if result != nil && result.Error != nil {
 			log.Printf("unable to save new account hmsl hash (%s, %s, %s): %s\n", newhash.Safename, newhash.Name, newhash.Hash, result.Error.Error())
+		} else {
+			accountMetadata.Added = true
 		}
-
-		msg := fmt.Sprintf("New account created, %s, for %s", newaccount.ID, *event.Incident.GitguardianUrl)
-		return sendBrimstoneError(ctx, http.StatusOK, msg)
+		accountsMetadata = append(accountsMetadata, accountMetadata)
 	}
+	// return information about the account affected by the event
+	return ctx.JSON(200, accountsMetadata)
+
 }
 
 // CyberArkPAMCPMEventPut receive CPM plugin request; CPM updated the password, this request is telling brimstone to update its database
@@ -470,18 +480,15 @@ func (b Brimstone) CyberArkPAMCPMEventPut(ctx echo.Context) error {
 	return result.Error
 }
 
-// FindAccountID - given hmslhash return list of accountids from the db
-func (b Brimstone) FindAccountID(hmslhash string) ([]string, error) {
+// FindAccounts - given hmslhash return list of accounts from the db
+func (b Brimstone) FindAccounts(hmslhash string) ([]SafeHash, error) {
 	db := b.Db
 	var hashes []SafeHash
-	var ids []string
 	result := db.Where(&SafeHash{Hash: hmslhash}).Find(&hashes)
-	if result.RowsAffected != 0 {
-		for i := 0; i < len(hashes); i++ {
-			ids = append(ids, hashes[i].Name)
-		}
+	if result.Error != nil {
+		return nil, result.Error
 	}
-	return ids, nil
+	return hashes, nil
 }
 
 // FetchHashes - given safename return list of hmsl hashes from the db associated to that safe
@@ -575,13 +582,13 @@ func (b Brimstone) ChangePasswordFromHash(ctx echo.Context, hmslhash string) err
 		return fmt.Errorf("error refreshing PAM session token: %s", clientErr.Error())
 	}
 
-	accountids, err := b.FindAccountID(hmslhash)
-	if len(accountids) > 0 {
-		for i := 0; i < len(accountids); i++ {
-			log.Printf("Account ID: %s\n", accountids[i])
-			code, err := client.ChangePasswordImmediately(accountids[i])
+	accounts, err := b.FindAccounts(hmslhash)
+	if len(accounts) > 0 {
+		for i := 0; i < len(accounts); i++ {
+			log.Printf("Account ID: %s\n", accounts[i].Name)
+			code, err := client.ChangePasswordImmediately(accounts[i].Name)
 			if err != nil {
-				return fmt.Errorf("failed to change password for acct id, %s: (code=%d) %s", accountids[i], code, err.Error())
+				return fmt.Errorf("failed to change password for acct id, %s: (code=%d) %s", accounts[i].Name, code, err.Error())
 			}
 		}
 	}
